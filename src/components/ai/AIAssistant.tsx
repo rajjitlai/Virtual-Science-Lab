@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { model, SYSTEM_PROMPT } from '../../config/gemini';
-import { Message } from '../../types/chat';
+import type { Message } from '../../types/chat';
 import { useChatHistory } from '../../contexts/ChatHistoryContext';
 
 interface AIAssistantProps {

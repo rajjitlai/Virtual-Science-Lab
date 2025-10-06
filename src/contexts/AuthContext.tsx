@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { account } from '../config/appwrite';
-import { Models } from 'appwrite';
+import type { Models } from 'appwrite';
 
 interface AuthContextType {
     user: Models.User<Models.Preferences> | null;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Matter from 'matter-js';
-import { PHYSICS_OBJECTS, PhysicsObject } from '../../types/physics';
+import { PHYSICS_OBJECTS } from '../../types/physics';
+import type { PhysicsObject } from '../../types/physics';
 
 interface PhysicsEngineProps {
     gravity: number;

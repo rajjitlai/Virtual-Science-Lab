@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { Beaker } from './Beaker';
-import { useState } from 'react';
+
 
 interface ChemistrySceneProps {
     liquidColor: string;

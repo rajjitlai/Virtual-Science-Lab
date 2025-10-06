@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChemistryScene } from './ChemistryScene';
-import { CHEMICALS, REACTIONS, Chemical } from '../../types/chemistry';
+import { CHEMICALS, REACTIONS } from '../../types/chemistry';
+import type { Chemical } from '../../types/chemistry';
 
 export const ChemistryLab = () => {
     const [selectedChemicals, setSelectedChemicals] = useState<Chemical[]>([]);

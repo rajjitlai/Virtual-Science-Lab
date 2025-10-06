@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { UserSettings, DEFAULT_SETTINGS } from '../../types/settings';
+import { DEFAULT_SETTINGS } from '../../types/settings';
+import type { UserSettings } from '../../types/settings';
 
 interface SettingsProps {
     isOpen: boolean;

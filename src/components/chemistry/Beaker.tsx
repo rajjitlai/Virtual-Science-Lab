@@ -13,9 +13,9 @@ export const Beaker = ({ position, liquidColor, liquidLevel, showBubbles }: Beak
     const liquidRef = useRef<THREE.Mesh>(null);
     const bubblesRef = useRef<THREE.Group>(null);
 
-    useFrame((state) => {
+    useFrame(() => {
         if (showBubbles && bubblesRef.current) {
-            bubblesRef.current.children.forEach((bubble, i) => {
+            bubblesRef.current.children.forEach((bubble) => {
                 bubble.position.y += 0.02;
                 if (bubble.position.y > 2) {
                     bubble.position.y = 0.5;

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useChatHistory } from '../../contexts/ChatHistoryContext';
-import { ChatSession, Message } from '../../types/chat';
+import type { ChatSession } from '../../types/chat';
 
 interface ChatHistoryProps {
     isOpen: boolean;
