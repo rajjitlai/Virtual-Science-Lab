@@ -72,7 +72,7 @@ Virtual Science Lab is an educational web application that brings science experi
 
 ### 🤖 AI Lab Assistant
 
-- **Powered by Google Gemini**: Advanced AI for science questions
+- **Powered by Google Gemma**: Advanced AI for science questions
 - **Context-Aware**: Knows which lab you're in
 - **Conversation Memory**: Remembers your discussion
 - **Quick Questions**: Pre-written prompts to get started
@@ -158,7 +158,7 @@ Virtual Science Lab is an educational web application that brings science experi
 ### Backend & Services
 
 - **Appwrite** - Authentication and backend
-- **Google Gemini AI** - AI assistant (gemini-pro)
+- **Hugging Face Inference API** - AI assistant (Gemma model)
 
 ### Development
 
@@ -356,24 +356,25 @@ virtual-science-lab/
    VITE_APPWRITE_PROJECT_ID=your-project-id-from-step-2
    ```
 
-### Google Gemini API Setup
+### Hugging Face API Setup (for Gemma)
 
 1. **Get API Key**
-   - Go to [makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
-   - Sign in with your Google account
-   - Click "Create API Key"
+   - Go to [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
+   - Sign in with your Hugging Face account
+   - Click "New token"
+   - Give it a name and select "Read" role
    - Copy the generated key
 
 2. **Add to .env**
 
    ```env
-   VITE_GEMINI_API_KEY=your-api-key-from-step-1
+   VITE_HUGGING_FACE_API_KEY=your-hugging-face-api-key-from-step-1
    ```
 
 3. **API Quotas**
-   - Free tier: 60 requests per minute
+   - Free tier: Limited requests per minute
    - Sufficient for testing and small-scale use
-   - Upgrade at [console.cloud.google.com](https://console.cloud.google.com) if needed
+   - Upgrade at [huggingface.co/pricing](https://huggingface.co/pricing) if needed
 
 ---
 
@@ -507,7 +508,7 @@ SOFTWARE.
 - [Matter.js](https://brm.io/matter-js/) - Physics engine
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
 - [Appwrite](https://appwrite.io/) - Backend platform
-- [Google Gemini](https://deepmind.google/technologies/gemini/) - AI assistant
+- [Google Gemma](https://blog.google/technology/developers/gemma-open-models/) - AI assistant
 
 ### Inspiration
 
@@ -520,6 +521,7 @@ SOFTWARE.
 - All contributors and testers
 - Open-source community
 - Stack Overflow for endless answers
+- Hugging Face for providing access to Gemma models
 
 ---
 

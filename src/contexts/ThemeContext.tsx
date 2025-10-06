@@ -11,7 +11,8 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+// Separate component for the provider to fix fast refresh issue
+const ThemeProviderComponent = ({ children }: { children: ReactNode }) => {
     const [theme, setThemeState] = useState<Theme>(() => {
         const saved = localStorage.getItem('theme');
         return (saved as Theme) || 'system';
@@ -66,6 +67,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         </ThemeContext.Provider>
     );
 };
+
+export const ThemeProvider = ThemeProviderComponent;
 
 export const useTheme = () => {
     const context = useContext(ThemeContext);

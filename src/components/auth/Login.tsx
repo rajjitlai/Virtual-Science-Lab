@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+interface AuthError {
+  message: string;
+  code?: number;
+}
+
 export const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -28,8 +33,9 @@ export const Login = () => {
                 await register(email, password, name);
                 navigate('/lab');
             }
-        } catch (err: any) {
-            setError(err.message || 'Authentication failed');
+        } catch (err) {
+            const authError = err as AuthError;
+            setError(authError.message || 'Authentication failed');
         }
     };
 

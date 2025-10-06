@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { model, SYSTEM_PROMPT } from '../../config/gemini';
+import { callGemmaModel, SYSTEM_PROMPT } from '../../config/gemini';
 import type { Message } from '../../types/chat';
 import { useChatHistory } from '../../contexts/ChatHistoryContext';
 
@@ -7,6 +7,12 @@ interface AIAssistantProps {
     isOpen: boolean;
     onClose: () => void;
     context?: 'chemistry' | 'physics';
+}
+
+interface APIError {
+  message: string;
+  name?: string;
+  stack?: string;
 }
 
 export const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
@@ -54,10 +60,6 @@ export const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
         setIsLoading(true);
 
         try {
-            if (!model) {
-                throw new Error('Gemini API not configured. Please add your API key to .env file.');
-            }
-
             const conversationHistory = messages
                 .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
                 .join('\n');
@@ -66,10 +68,29 @@ export const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
                 ? `Current lab: ${context}. User is working with ${context === 'chemistry' ? 'chemical reactions and mixtures' : 'physics simulations and gravity'}.`
                 : '';
 
-            const fullPrompt = `${SYSTEM_PROMPT}\n\n${contextPrompt}\n\nConversation history:\n${conversationHistory}\n\nUser: ${input}\n\nAssistant:`;
+            const fullPrompt = `${SYSTEM_PROMPT}
 
-            const result = await model.generateContent(fullPrompt);
-            const response = result.response.text();
+${contextPrompt}
+
+Conversation history:
+${conversationHistory}
+
+User: ${input}
+
+Assistant:`;
+
+            const result = await callGemmaModel(fullPrompt);
+            
+            // Extract the generated text from the Hugging Face response
+            let response = '';
+            if (Array.isArray(result) && result.length > 0 && result[0].generated_text) {
+                // Extract just the assistant's response (remove the prompt part)
+                response = result[0].generated_text.replace(fullPrompt, '').trim();
+            } else if (result.generated_text) {
+                response = result.generated_text.replace(fullPrompt, '').trim();
+            } else {
+                response = 'Sorry, I encountered an issue processing your request.';
+            }
 
             const assistantMessage: Message = {
                 id: (Date.now() + 1).toString(),
@@ -79,13 +100,14 @@ export const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
             };
 
             setMessages((prev) => [...prev, assistantMessage]);
-        } catch (error: any) {
-            console.error('Error calling Gemini API:', error);
+        } catch (error) {
+            const apiError = error as APIError;
+            console.error('Error calling Gemma API:', apiError);
 
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: error.message || 'Sorry, I encountered an error. Please make sure your Gemini API key is configured correctly in the .env file.',
+                content: apiError.message || 'Sorry, I encountered an error. Please make sure your Hugging Face API key is configured correctly in the .env file.',
                 timestamp: new Date(),
             };
 

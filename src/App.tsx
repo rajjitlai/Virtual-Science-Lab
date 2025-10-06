@@ -44,8 +44,10 @@ const Lab = () => {
     }
 
     // Welcome message
-    showToast(`Welcome back, ${user?.name}!`, 'success');
-  }, [user]);
+    if (user?.name) {
+      showToast(`Welcome back, ${user?.name}!`, 'success');
+    }
+  }, [user, showToast]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

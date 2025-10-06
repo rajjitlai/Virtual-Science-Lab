@@ -14,7 +14,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+// Separate component for the provider to fix fast refresh issue
+const AuthProviderComponent = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const currentUser = await account.get();
             setUser(currentUser);
         } catch (error) {
+            console.debug('No user session found:', error);
             setUser(null);
         } finally {
             setLoading(false);
@@ -62,6 +64,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         </AuthContext.Provider>
     );
 };
+
+export const AuthProvider = AuthProviderComponent;
 
 export const useAuth = () => {
     const context = useContext(AuthContext);

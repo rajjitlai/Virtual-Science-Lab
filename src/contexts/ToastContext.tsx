@@ -7,7 +7,8 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-export const ToastProvider = ({ children }: { children: ReactNode }) => {
+// Separate component for the provider to fix fast refresh issue
+const ToastProviderComponent = ({ children }: { children: ReactNode }) => {
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
     const showToast = (message: string, type: 'success' | 'error' | 'info') => {
@@ -27,6 +28,8 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         </ToastContext.Provider>
     );
 };
+
+export const ToastProvider = ToastProviderComponent;
 
 export const useToast = () => {
     const context = useContext(ToastContext);

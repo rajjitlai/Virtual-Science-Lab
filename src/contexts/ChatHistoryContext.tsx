@@ -12,7 +12,8 @@ interface ChatHistoryContextType {
 
 const ChatHistoryContext = createContext<ChatHistoryContextType | undefined>(undefined);
 
-export const ChatHistoryProvider = ({ children }: { children: ReactNode }) => {
+// Separate component for the provider to fix fast refresh issue
+const ChatHistoryProviderComponent = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
     const [sessions, setSessions] = useState<ChatSession[]>([]);
 
@@ -23,10 +24,10 @@ export const ChatHistoryProvider = ({ children }: { children: ReactNode }) => {
             if (saved) {
                 const parsed = JSON.parse(saved);
                 // Convert date strings back to Date objects
-                const sessionsWithDates = parsed.map((session: any) => ({
+                const sessionsWithDates = parsed.map((session: ChatSession) => ({
                     ...session,
                     createdAt: new Date(session.createdAt),
-                    messages: session.messages.map((msg: any) => ({
+                    messages: session.messages.map((msg) => ({
                         ...msg,
                         timestamp: new Date(msg.timestamp),
                     })),
@@ -79,6 +80,8 @@ export const ChatHistoryProvider = ({ children }: { children: ReactNode }) => {
         </ChatHistoryContext.Provider>
     );
 };
+
+export const ChatHistoryProvider = ChatHistoryProviderComponent;
 
 export const useChatHistory = () => {
     const context = useContext(ChatHistoryContext);
