@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { callGemmaModel, SYSTEM_PROMPT } from '../../config/gemini';
+import { callGemmaModel, SYSTEM_PROMPT } from '../../config/ai-service';
 import type { Message } from '../../types/chat';
 import { useChatHistory } from '../../contexts/ChatHistoryContext';
 
@@ -60,15 +60,15 @@ export const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
         setIsLoading(true);
 
         try {
-            const conversationHistory = messages
-                .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
-                .join('\n');
+                const conversationHistory = messages
+                    .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+                    .join('\n');
 
-            const contextPrompt = context
-                ? `Current lab: ${context}. User is working with ${context === 'chemistry' ? 'chemical reactions and mixtures' : 'physics simulations and gravity'}.`
-                : '';
+                const contextPrompt = context
+                    ? `Current lab: ${context}. User is working with ${context === 'chemistry' ? 'chemical reactions and mixtures' : 'physics simulations and gravity'}.`
+                    : '';
 
-            const fullPrompt = `${SYSTEM_PROMPT}
+                const fullPrompt = `${SYSTEM_PROMPT}
 
 ${contextPrompt}
 
@@ -79,37 +79,34 @@ User: ${input}
 
 Assistant:`;
 
-            const result = await callGemmaModel(fullPrompt);
-            
-            // Extract the generated text from the Hugging Face response
-            let response = '';
-            if (Array.isArray(result) && result.length > 0 && result[0].generated_text) {
-                // Extract just the assistant's response (remove the prompt part)
-                response = result[0].generated_text.replace(fullPrompt, '').trim();
-            } else if (result.generated_text) {
-                response = result.generated_text.replace(fullPrompt, '').trim();
-            } else {
-                response = 'Sorry, I encountered an issue processing your request.';
-            }
+                const result = await callGemmaModel(fullPrompt);
+                
+                // Extract the generated text from the response
+                let response = '';
+                if (result.generated_text) {
+                    response = result.generated_text.trim();
+                } else {
+                    response = 'Sorry, I encountered an issue processing your request.';
+                }
 
-            const assistantMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: response,
-                timestamp: new Date(),
-            };
+                const assistantMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: response,
+                    timestamp: new Date(),
+                };
 
-            setMessages((prev) => [...prev, assistantMessage]);
-        } catch (error) {
-            const apiError = error as APIError;
-            console.error('Error calling Gemma API:', apiError);
+                setMessages((prev) => [...prev, assistantMessage]);
+            } catch (error) {
+                const apiError = error as APIError;
+                console.error('Error with AI response:', apiError);
 
-            const errorMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: apiError.message || 'Sorry, I encountered an error. Please make sure your Hugging Face API key is configured correctly in the .env file.',
-                timestamp: new Date(),
-            };
+                const errorMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: apiError.message || 'Sorry, I encountered an error. The AI service might be temporarily unavailable, but I have a fallback system that should work.',
+                    timestamp: new Date(),
+                };
 
             setMessages((prev) => [...prev, errorMessage]);
         } finally {

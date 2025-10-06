@@ -72,7 +72,8 @@ Virtual Science Lab is an educational web application that brings science experi
 
 ### 🤖 AI Lab Assistant
 
-- **Powered by Google Gemma**: Advanced AI for science questions
+- **Free API Implementation**: No API key required
+- **Offline Capability**: Works even without internet connection
 - **Context-Aware**: Knows which lab you're in
 - **Conversation Memory**: Remembers your discussion
 - **Quick Questions**: Pre-written prompts to get started
