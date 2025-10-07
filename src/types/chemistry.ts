@@ -14,6 +14,14 @@ export interface Reaction {
     visualization: 'bubbles' | 'color-change' | 'heat' | 'precipitate';
 }
 
+export interface Mixture {
+    id: string;
+    name: string;
+    chemicals: Chemical[];
+    createdAt: Date;
+    color: string;
+}
+
 export const CHEMICALS: Chemical[] = [
     { id: 'water', name: 'Water', formula: 'H₂O', color: '#00aaff', state: 'liquid', pH: 7 },
     { id: 'vinegar', name: 'Vinegar', formula: 'CH₃COOH', color: '#ffeeaa', state: 'liquid', pH: 3 },

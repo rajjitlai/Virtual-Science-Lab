@@ -291,6 +291,28 @@ export const Settings = ({ isOpen, onClose }: SettingsProps) => {
                                         </label>
                                     </div>
 
+                                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                        <div>
+                                            <p className="font-semibold text-gray-800 dark:text-white">
+                                                Show Welcome Tour
+                                            </p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                Display the welcome tour on startup
+                                            </p>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={!settings.isTourShown} // Inverted because we're showing "show tour" option
+                                                onChange={(e) =>
+                                                    saveSettings({ ...settings, isTourShown: !e.target.checked })
+                                                }
+                                                className="sr-only peer"
+                                            />
+                                            <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                                        </label>
+                                    </div>
+
                                     <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                                         <label className="block font-semibold text-gray-800 dark:text-white mb-3">
                                             Default Lab on Startup

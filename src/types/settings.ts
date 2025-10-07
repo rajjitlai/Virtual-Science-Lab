@@ -4,6 +4,7 @@ export interface UserSettings {
     soundEffects: boolean;
     autoSaveExperiments: boolean;
     defaultLab: 'chemistry' | 'physics';
+    isTourShown: boolean; // New setting for tour completion
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -12,4 +13,5 @@ export const DEFAULT_SETTINGS: UserSettings = {
     soundEffects: true,
     autoSaveExperiments: false,
     defaultLab: 'chemistry',
+    isTourShown: false, // Default to false so tour shows for new users
 };

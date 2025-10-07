@@ -1,5 +1,298 @@
 # 🧪 Virtual Science Lab
 
+A modern, interactive science laboratory application built with React, TypeScript, and Three.js. Explore chemistry and physics through hands-on virtual experiments with an AI-powered assistant.
+
+## 🌟 Features
+
+### 🧪 Chemistry Lab
+
+- **Interactive 3D Beaker**: Mix chemicals and watch reactions in real-time
+- **Realistic Reactions**: See bubbling effects, color changes, and more
+- **Chemical Database**: Pre-loaded with common chemicals (water, vinegar, baking soda, etc.)
+- **Custom Chemicals**: Add your own chemicals with AI-generated properties
+- **Mixture Storage**: Save and load your favorite chemical combinations
+- **Reaction Detection**: Automatic detection of common chemical reactions
+- **Sound Effects**: Auditory feedback for interactions
+
+### ⚡ Physics Lab
+
+- **Interactive Physics Engine**: Drop objects and watch them collide
+- **Adjustable Gravity**: Change gravity settings to simulate different planets
+- **Material Properties**: Objects with different bounce and friction properties
+- **Real-time Simulation**: Physics calculations updated in real-time
+
+### 🤖 AI Assistant
+
+- **Context-Aware**: Knows which lab you're in
+- **Conversation Memory**: Remembers your discussion
+- **Quick Questions**: Pre-written prompts to get started
+- **Educational Focus**: Explains concepts in simple terms
+
+### 💬 Chat History
+
+- **Auto-Save Conversations**: Never lose your discussions
+- **Automatic Storage Selection**: Uses cloud storage when configured, falls back to local storage
+- **Searchable Archive**: Review past conversations
+- **Delete Options**: Remove individual chats or clear all
+
+### 🔊 Sound System
+
+- **Interactive Audio Feedback**: Sound effects for all lab interactions
+- **Configurable**: Toggle sound effects on/off in settings
+- **Context-Aware Sounds**: Different sounds for different actions
+
+## 📁 Project Structure
+
+```
+src/
+├── components/
+│   ├── ai/          # AI assistant components
+│   ├── auth/        # Authentication components
+│   ├── chemistry/   # Chemistry lab components
+│   ├── common/      # Shared components
+│   ├── physics/     # Physics lab components
+│   └── settings/    # Settings components
+├── config/          # Configuration files
+├── contexts/        # React context providers
+├── types/           # TypeScript type definitions
+├── utils/           # Utility functions
+└── assets/          # Static assets
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+- A modern web browser
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/virtual-science-lab.git
+   cd virtual-science-lab
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   Edit the [.env](file:///D:/Other/Code/virtual-science-lab/.env) file with your API keys (see [API Keys Setup](#-api-keys-setup))
+
+4. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+## 🔧 Technologies Used
+
+### Frontend
+
+- **React 18** - UI library
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+- **Three.js** - 3D graphics
+- **@react-three/fiber** - React renderer for Three.js
+- **@react-three/drei** - Helper components
+- **Matter.js** - 2D physics engine
+- **Web Audio API** - Sound effects
+
+### Backend & Services
+
+- **Appwrite** - Authentication and backend (optional database for chat history, mixtures, and tour settings)
+- **OpenRouter API** - AI assistant (google/gemma-3n-e2b-it:free model)
+- **Vite Proxy** - Handles CORS for AI API requests
+
+### Development
+
+- **Vite** - Build tool
+- **ESLint** - Code linting
+- **Prettier** - Code formatting
+
+## 🎮 Usage Guide
+
+### 1. Sign In
+
+- Click the **Login** button
+- Sign in with email/password or magic URL
+- Create an account if you don't have one
+
+### 2. Explore the Labs
+
+- **Chemistry Lab**: Mix chemicals in a 3D beaker
+- **Physics Lab**: Drop objects and adjust gravity
+
+### 3. Use the AI Assistant
+
+- Click the **🤖 button** in the bottom right
+- Type your science question
+- Get instant, educational explanations
+- The AI uses the OpenRouter API with the google/gemma-3n-e2b-it:free model
+- Conversation is auto-saved when you close it
+
+### 4. Review Chat History
+
+- Click the **💬 icon** in the navbar
+- View all past conversations
+- Click any chat to see full details
+- Delete individual chats or clear all
+- Chat history is automatically stored in the cloud when Appwrite is configured, otherwise it's stored locally
+
+### 5. Manage Chemical Mixtures
+
+- In the Chemistry Lab, mix chemicals using the provided buttons
+- Click **Save Mixture** to store your combination
+- View saved mixtures in the **Recent Mixtures** section
+- Click any mixture to load it back into the beaker
+
+### 6. Customize Settings
+
+- Click the **⚙️ icon** in the navbar
+- Switch between light/dark/system theme
+- Toggle preferences (notifications, sound effects)
+- Choose your default lab
+- Control welcome tour visibility
+
+---
+
+## 🔑 API Keys Setup
+
+### Appwrite Setup
+
+1. **Create Account**
+   - Go to [cloud.appwrite.io](https://cloud.appwrite.io/)
+   - Sign up for a free account
+
+2. **Create Project**
+   - Click "Create Project"
+   - Name it "Virtual Science Lab"
+   - Copy your Project ID
+
+3. **Enable Authentication**
+   - Go to **Auth** → **Settings**
+   - Enable Email/Password authentication
+   - Enable Magic URL authentication
+
+4. **Add Platform**
+   - Go to **Settings** → **Platforms**
+   - Click "Add Platform" → "Web"
+   - Add `http://localhost:5173` for development
+   - Add your production URL later
+
+5. **Create Database for App Data**
+   - Go to **Databases** → **Create Database**
+   - Name it "Science Lab Data"
+   - Copy your Database ID for use in environment variables
+
+6. **Create Collections**
+
+   **A. Chat Sessions Collection**
+   - In your new database, click "Create Collection"
+   - Name it "Chat Sessions"
+   - Add the following attributes:
+     - `title` (string, 255 characters, required)
+     - `context` (string, 50 characters, optional)
+     - `messages` (string, required - JSON stringified array)
+   - Note: The `createdAt` timestamp is automatically provided by Appwrite and should not be manually added
+   - Add the following permissions:
+     - Read: Any
+     - Write: Any
+   - Copy the Collection ID for use in environment variables
+
+   **B. User Data Collection**
+   - In your database, click "Create Collection"
+   - Name it "User Data"
+   - Add the following attributes:
+     - `type` (string, 50 characters, required) - Used to distinguish between "mixture", "tour", and "settings"
+     - `userId` (string, 255 characters, required) - User identifier
+     - `name` (string, 255 characters, optional) - Mixture name or setting name
+     - `chemicals` (string, optional - JSON stringified array) - Chemical data for mixtures
+     - `color` (string, 7 characters, optional) - Hex color code for mixtures
+     - `isTourShown` (boolean, optional) - Tour completion status
+     - `settings` (string, optional - JSON stringified object) - User settings data
+     - `data` (string, optional - JSON stringified object) - Generic data field
+   - Note: The `createdAt` timestamp is automatically provided by Appwrite and should not be manually added
+   - Add the following permissions:
+     - Read: Any
+     - Write: Any
+   - Copy the Collection ID for use in environment variables
+
+7. **Add to .env**
+
+   ```env
+   VITE_APPWRITE_PROJECT_ID=your-project-id-from-step-2
+   VITE_APPWRITE_DATABASE_ID=your-database-id-from-step-5
+   VITE_APPWRITE_COLLECTION_ID=your-collection-id-from-step-6
+   ```
+
+### OpenRouter API Setup
+
+1. **Create Account**
+   - Go to [openrouter.ai](https://openrouter.ai/)
+   - Sign up for a free account
+
+2. **Get API Key**
+   - Navigate to the API Keys section
+   - Generate a new API key
+   - Copy the API key
+
+3. **Add to .env**
+
+   ```env
+   VITE_OPENROUTER_API_KEY=your-openrouter-api-key-here
+   ```
+
+> Note: The application uses the `google/gemma-3n-e2b-it:free` model which is a free and optimized option provided by OpenRouter. The chat history, mixtures, and tour settings will automatically use Appwrite cloud storage when the database and collection IDs are provided. If these variables are not set, it will fall back to localStorage.
+
+## 🌐 Deployment
+
+### Deploy to Vercel Appwrite
+
+## 🗺️ Roadmap
+
+### Upcoming Features
+
+- [ ] **Biology Lab** - Cell simulations and microscope view
+- [ ] **Electrical Circuits** - Build and test circuits
+- [ ] **More Chemical Reactions** - Expand chemistry database
+- [ ] **Experiment Reports** - Export results as PDF
+- [ ] **Social Features** - Share experiments with friends
+- [ ] **Achievements System** - Gamify learning
+- [ ] **Multi-language Support** - Internationalization
+- [ ] **Mobile Apps** - Native iOS and Android apps
+- [ ] **VR/AR Support** - Immersive 3D experiences
+- [ ] **Teacher Dashboard** - Track student progress
+- [ ] **Multiplayer Labs** - Collaborate in real-time
+- [ ] **Video Tutorials** - Guided experiments
+
+### Version History
+
+- **v1.0.0** (2024-01) - Initial release
+  - Chemistry Lab
+  - Physics Lab
+  - AI Assistant
+  - User Authentication
+  - Chat History
+  - Settings & Themes
+  - Chemical Mixtures
+  - Tour Settings
+  - Sound Effects
+
+---
+# 🧪 Virtual Science Lab
+
 <div align="center">
 
 ![Virtual Science Lab](https://img.shields.io/badge/Virtual%20Science%20Lab-v1.0.0-blue?style=for-the-badge)
