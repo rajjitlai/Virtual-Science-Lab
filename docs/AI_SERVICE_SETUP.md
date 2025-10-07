@@ -1,6 +1,6 @@
 # AI Service Setup with OpenRouter
 
-This document explains how to configure the Virtual Science Lab to use the OpenRouter API with the mistralai/mistral-small-3.2-24b-instruct-2506:free model.
+This document explains how to configure the Virtual Science Lab to use the OpenRouter API with the google/gemma-3n-e2b-it:free model.
 
 ## Prerequisites
 
@@ -29,7 +29,7 @@ Replace `your_openrouter_api_key_here` with your actual API key from OpenRouter.
 
 ### 3. Supported Model
 
-The application is configured to use the `mistralai/mistral-small-3.2-24b-instruct-2506:free` model, which is a free and optimized option provided by OpenRouter. This model offers a good balance between performance and availability, making it well-suited for educational applications.
+The application is configured to use the `google/gemma-3n-e2b-it:free` model, which is a free and optimized option provided by OpenRouter. This model offers a good balance between performance and availability, making it well-suited for educational applications.
 
 ### 4. API Protection Features
 
@@ -84,7 +84,7 @@ If the API key is not configured or the API call fails, the application will dis
 
 ## Cost Considerations
 
-The `mistralai/mistral-small-3.2-24b-instruct-2506:free` model is free to use, but OpenRouter may have rate limits for free accounts. Check the OpenRouter documentation for the most current usage limits.
+The `google/gemma-3n-e2b-it:free` model is free to use, but OpenRouter may have rate limits for free accounts. Check the OpenRouter documentation for the most current usage limits.
 
 ## Technical Implementation
 

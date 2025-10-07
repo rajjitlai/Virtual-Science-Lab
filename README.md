@@ -73,11 +73,10 @@ Virtual Science Lab is an educational web application that brings science experi
 
 ### 🤖 AI Lab Assistant
 
-- **OpenRouter API Integration**: Uses mistralai/mistral-small-3.2-24b-instruct-2506:free model
+- **OpenRouter API Integration**: Uses google/gemma-3n-e2b-it:free model
 - **Rate Limiting Protection**: Prevents API abuse with built-in request throttling
 - **Conversation History Management**: Limits context to prevent token overflow
 - **Free Option Available**: No cost to use the basic AI features
-- **CORS-Compliant**: Requests proxied through Vite to avoid browser restrictions
 - **Context-Aware**: Knows which lab you're in
 - **Conversation Memory**: Remembers your discussion
 - **Quick Questions**: Pre-written prompts to get started
@@ -164,7 +163,7 @@ Virtual Science Lab is an educational web application that brings science experi
 ### Backend & Services
 
 - **Appwrite** - Authentication and backend (optional database for chat history)
-- **OpenRouter API** - AI assistant (mistralai/mistral-small-3.2-24b-instruct-2506:free model)
+- **OpenRouter API** - AI assistant (google/gemma-3n-e2b-it:free model)
 - **Vite Proxy** - Handles CORS for AI API requests
 
 ### Development
@@ -262,7 +261,7 @@ VITE_OPENROUTER_API_KEY=your-openrouter-api-key-here
 - Click the **🤖 floating button** (bottom-right)
 - Type your science question
 - Get instant, educational explanations
-- The AI uses the OpenRouter API with the mistralai/mistral-small-3.2-24b-instruct-2506:free model
+- The AI uses the OpenRouter API with the google/gemma-3n-e2b-it:free model
 - Conversation is auto-saved when you close it
 
 ### 5. Review Chat History
@@ -404,7 +403,7 @@ virtual-science-lab/
    VITE_OPENROUTER_API_KEY=your-openrouter-api-key-here
    ```
 
-> Note: The application uses the `mistralai/mistral-small-3.2-24b-instruct-2506:free` model which is a free and optimized option provided by OpenRouter. The chat history will automatically use Appwrite cloud storage when the database and collection IDs are provided. If these variables are not set, it will fall back to localStorage.
+> Note: The application uses the `google/gemma-3n-e2b-it:free` model which is a free and optimized option provided by OpenRouter. The chat history will automatically use Appwrite cloud storage when the database and collection IDs are provided. If these variables are not set, it will fall back to localStorage.
 
 ## 🌐 Deployment
 

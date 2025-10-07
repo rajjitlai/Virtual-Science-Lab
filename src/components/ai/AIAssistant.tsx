@@ -107,6 +107,8 @@ Assistant:`;
                 
                 if (apiError.message.includes('API key is not configured')) {
                     errorMessage += 'Please make sure you have set your OpenRouter API key in the VITE_OPENROUTER_API_KEY environment variable.';
+                } else if (apiError.message.includes('Invalid Google Gemini API key')) {
+                    errorMessage += 'Your API key seems to be invalid. Please check your VITE_OPENROUTER_API_KEY in the .env file.';
                 } else if (apiError.message.includes('timed out')) {
                     errorMessage += 'The request timed out. This might be due to a slow network connection or high demand on the API. Please try again.';
                 } else if (apiError.message.includes('Network error')) {
@@ -133,6 +135,134 @@ Assistant:`;
             e.preventDefault();
             handleSend();
         }
+    };
+
+    // Simple markdown parser for basic formatting
+    const parseMarkdown = (content: string) => {
+        // Split content into lines
+        const lines = content.split('\n');
+        const elements: React.ReactNode[] = [];
+        let key = 0;
+        
+        // Process inline formatting for a line
+        const processInlineFormatting = (line: string) => {
+            return line
+                .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>') // Bold and italic
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+                .replace(/__(.*?)__/g, '<strong>$1</strong>') // Bold
+                .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+                .replace(/_(.*?)_/g, '<em>$1</em>') // Italic
+                .replace(/~~(.*?)~~/g, '<del>$1</del>') // Strikethrough
+                .replace(/`([^`]+)`/g, '<code>$1</code>'); // Inline code
+        };
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            
+            // Check for code blocks (```)
+            if (line.startsWith('```')) {
+                const lang = line.substring(3).trim();
+                const codeLines = [];
+                let j = i + 1;
+                
+                // Collect all lines until closing ```
+                while (j < lines.length && !lines[j].startsWith('```')) {
+                    codeLines.push(lines[j]);
+                    j++;
+                }
+                
+                elements.push(
+                    <pre key={key++} className="markdown-code-block">
+                        <code>{codeLines.join('\n')}</code>
+                    </pre>
+                );
+                i = j; // Skip processed lines
+            }
+            // Check for blockquotes (>)
+            else if (line.startsWith('> ')) {
+                const quoteLines = [];
+                let j = i;
+                
+                // Collect all consecutive blockquote lines
+                while (j < lines.length && lines[j].startsWith('> ')) {
+                    quoteLines.push(lines[j].substring(2));
+                    j++;
+                }
+                
+                elements.push(
+                    <blockquote key={key++}>
+                        {quoteLines.map((quoteLine, idx) => (
+                            <p key={idx} dangerouslySetInnerHTML={{ __html: processInlineFormatting(quoteLine) }} />
+                        ))}
+                    </blockquote>
+                );
+                i = j - 1; // Adjust index
+            }
+            // Check for horizontal rules
+            else if (line.trim() === '---' || line.trim() === '***' || line.trim() === '___') {
+                elements.push(<hr key={key++} />);
+            }
+            // Check for headers (### Header)
+            else if (line.startsWith('### ')) {
+                elements.push(<h3 key={key++} dangerouslySetInnerHTML={{ __html: processInlineFormatting(line.substring(4)) }} />);
+            }
+            // Check for headers (## Header)
+            else if (line.startsWith('## ')) {
+                elements.push(<h2 key={key++} dangerouslySetInnerHTML={{ __html: processInlineFormatting(line.substring(3)) }} />);
+            }
+            // Check for headers (# Header)
+            else if (line.startsWith('# ')) {
+                elements.push(<h1 key={key++} dangerouslySetInnerHTML={{ __html: processInlineFormatting(line.substring(2)) }} />);
+            }
+            // Check for ordered lists (1. item)
+            else if (/^\d+\.\s/.test(line.trim())) {
+                const listItems = [];
+                let j = i;
+                let itemNumber = 1;
+                
+                // Collect all consecutive ordered list items
+                while (j < lines.length && /^\d+\.\s/.test(lines[j].trim())) {
+                    // Extract the actual content after the number
+                    const listItemContent = lines[j].trim().substring(lines[j].trim().indexOf('.') + 2);
+                    listItems.push(<li key={key++} dangerouslySetInnerHTML={{ __html: processInlineFormatting(listItemContent) }} />);
+                    j++;
+                    itemNumber++;
+                }
+                
+                elements.push(<ol key={key++}>{listItems}</ol>);
+                i = j - 1; // Adjust index
+            }
+            // Check for bullet points (* item or - item)
+            else if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
+                const listItems = [];
+                let j = i;
+                
+                // Collect all consecutive list items
+                while (j < lines.length && 
+                       (lines[j].trim().startsWith('* ') || lines[j].trim().startsWith('- '))) {
+                    const listItemContent = lines[j].trim().substring(2);
+                    listItems.push(<li key={key++} dangerouslySetInnerHTML={{ __html: processInlineFormatting(listItemContent) }} />);
+                    j++;
+                }
+                
+                elements.push(<ul key={key++}>{listItems}</ul>);
+                i = j - 1; // Adjust index
+            }
+            // Check for chemical equations (contain special characters)
+            else if (line.includes('⇌') || line.includes('→') || line.includes('←') || line.includes('⁺') || line.includes('⁻')) {
+                elements.push(<div key={key++} className="font-mono bg-gray-50 dark:bg-gray-700 rounded p-3 my-2 border border-gray-200 dark:border-gray-600">{line}</div>);
+            }
+            // Regular paragraph with inline formatting
+            else if (line.trim() !== '') {
+                elements.push(<p key={key++} dangerouslySetInnerHTML={{ __html: processInlineFormatting(line) }} />);
+            }
+            // Empty line
+            else {
+                elements.push(<div key={key++}>&nbsp;</div>);
+            }
+        }
+        
+        return elements;
     };
 
     const quickQuestions = [
@@ -184,7 +314,9 @@ Assistant:`;
                                         : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'
                                     }`}
                             >
-                                <p className="whitespace-pre-wrap">{message.content}</p>
+                                <div className="markdown-content">
+                                    {parseMarkdown(message.content)}
+                                </div>
                                 <p className="text-xs mt-2 opacity-70">
                                     {message.timestamp.toLocaleTimeString()}
                                 </p>

@@ -96,3 +96,93 @@
 ### Reason
 - To provide better documentation for users about the implemented protection features
 - To help users understand how the AI service handles rate limiting and conversation history
+
+## v1.2.0 - Switch to Google Generative AI
+
+### Changed
+- Switched from OpenRouter API to Google Generative AI
+- Integrated `gemma-3-1b-it` model as the primary AI model (completely free)
+- Updated [ai-service.ts](file:///d:/Other/Code/virtual-science-lab/src/config/ai-service.ts) to use Google's Generative AI SDK
+- Modified [AIAssistant.tsx](file:///d:/Other/Code/virtual-science-lab/src/components/ai/AIAssistant.tsx) to work with Google's API format
+- Updated error handling to be specific to Google's API
+- Updated all documentation to reflect the new API provider
+
+### Reason
+- Switching back to Google Generative AI with the Gemma model as requested
+- The Google Generative AI SDK provides a more straightforward integration
+- The gemma-3-1b-it model offers good performance for educational applications and is completely free
+
+### Updated
+- [README.md](file:///d:/Other/Code/virtual-science-lab/README.md) with Google Generative AI information
+- [AI_SERVICE_SETUP.md](file:///d:/Other/Code/virtual-science-lab/docs/AI_SERVICE_SETUP.md) with Google API setup instructions
+- [.env.example](file:///d:/Other/Code/virtual-science-lab/.env.example) with VITE_GEMINI_API_KEY variable
+
+## v1.2.1 - Free Model Clarification
+
+### Updated
+- Clarified in documentation that we're using the `gemma-3-1b-it` model which is completely free
+- Updated [README.md](file:///d:/Other/Code/virtual-science-lab/README.md) to emphasize the free nature of the model
+- Updated [AI_SERVICE_SETUP.md](file:///d:/Other/Code/virtual-science-lab/docs/AI_SERVICE_SETUP.md) to highlight that the model is free with generous usage limits
+- Added information about the lightweight nature of the model and its suitability for educational applications
+
+### Reason
+- To provide clear information that the selected model is completely free to use
+- To help users understand the cost implications of using the AI service
+
+## v1.3.0 - Switch Back to OpenRouter with Google Gemma Model
+
+### Changed
+- Switched back to OpenRouter API as requested
+- Integrated `google/gemma-3n-e2b-it:free` model as the primary AI model
+- Updated [ai-service.ts](file:///d:/Other/Code/virtual-science-lab/src/config/ai-service.ts) to use direct API calls to OpenRouter
+- Modified [AIAssistant.tsx](file:///d:/Other/Code/virtual-science-lab/src/components/ai/AIAssistant.tsx) to work with OpenRouter's API format
+- Updated error handling to be specific to OpenRouter's API
+- Updated all documentation to reflect the new API provider and model
+
+### Reason
+- Switching back to OpenRouter with the Google Gemma model as requested
+- The `google/gemma-3n-e2b-it:free` model offers good performance for educational applications and is free to use
+- Maintains the benefits of OpenRouter's unified API access
+
+### Updated
+- [README.md](file:///d:/Other/Code/virtual-science-lab/README.md) with OpenRouter and Google Gemma model information
+- [AI_SERVICE_SETUP.md](file:///d:/Other/Code/virtual-science-lab/docs/AI_SERVICE_SETUP.md) with OpenRouter API setup instructions
+- [.env.example](file:///d:/Other/Code/virtual-science-lab/.env.example) with VITE_OPENROUTER_API_KEY variable
+- Reverted conversation history management features from previous implementation
+
+## v1.3.1 - AI Response Formatting Improvements
+
+### Added
+- Enhanced formatting for chemical equations and scientific notation in AI responses
+- Added special styling for chemical reactions with reversible arrows (⇌)
+- Improved bullet point formatting for lists
+- Added monospace font styling for chemical equations
+- Updated system prompt with specific formatting guidelines for chemical content
+
+### Reason
+- To improve readability of chemical equations and scientific content
+- To make AI responses more visually appealing and easier to understand
+- To provide consistent formatting for educational content
+
+### Updated
+- [ai-service.ts](file:///d:/Other/Code/virtual-science-lab/src/config/ai-service.ts) with enhanced formatting guidelines in system prompt
+- [AIAssistant.tsx](file:///d:/Other/Code/virtual-science-lab/src/components/ai/AIAssistant.tsx) with improved content formatting function
+
+## v1.3.2 - Markdown Formatting Support
+
+### Added
+- Implemented markdown parsing for AI responses
+- Added support for headers (#, ##)
+- Added support for bold text (**text** or __text__)
+- Added support for italic text (*text* or _text_)
+- Added support for bullet point lists (* or -)
+- Enhanced chemical equation formatting with markdown awareness
+- Improved overall readability of AI responses
+
+### Reason
+- To provide richer formatting options for AI responses
+- To make complex scientific explanations more structured and readable
+- To support common markdown syntax that the AI might generate
+
+### Updated
+- [AIAssistant.tsx](file:///d:/Other/Code/virtual-science-lab/src/components/ai/AIAssistant.tsx) with comprehensive markdown parsing function
