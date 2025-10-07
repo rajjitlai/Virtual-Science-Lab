@@ -73,10 +73,11 @@ Virtual Science Lab is an educational web application that brings science experi
 
 ### 🤖 AI Lab Assistant
 
-- **Free API Implementation**: No API key required
-- **NLP Cloud Integration**: Uses Llama 2 model with local fallback
+- **OpenRouter API Integration**: Uses mistralai/mistral-small-3.2-24b-instruct-2506:free model
+- **Rate Limiting Protection**: Prevents API abuse with built-in request throttling
+- **Conversation History Management**: Limits context to prevent token overflow
+- **Free Option Available**: No cost to use the basic AI features
 - **CORS-Compliant**: Requests proxied through Vite to avoid browser restrictions
-- **Offline Capability**: Works even without internet connection
 - **Context-Aware**: Knows which lab you're in
 - **Conversation Memory**: Remembers your discussion
 - **Quick Questions**: Pre-written prompts to get started
@@ -163,7 +164,7 @@ Virtual Science Lab is an educational web application that brings science experi
 ### Backend & Services
 
 - **Appwrite** - Authentication and backend (optional database for chat history)
-- **NLP Cloud API** - AI assistant (Llama 2 model) with local fallback
+- **OpenRouter API** - AI assistant (mistralai/mistral-small-3.2-24b-instruct-2506:free model)
 - **Vite Proxy** - Handles CORS for AI API requests
 
 ### Development
@@ -227,6 +228,9 @@ VITE_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
 VITE_APPWRITE_PROJECT_ID=your-project-id-here
 VITE_APPWRITE_DATABASE_ID=your-database-id-here
 VITE_APPWRITE_COLLECTION_ID=your-collection-id-here
+
+# OpenRouter API Configuration
+VITE_OPENROUTER_API_KEY=your-openrouter-api-key-here
 ```
 
 ---
@@ -258,7 +262,7 @@ VITE_APPWRITE_COLLECTION_ID=your-collection-id-here
 - Click the **🤖 floating button** (bottom-right)
 - Type your science question
 - Get instant, educational explanations
-- The AI uses a free NLP Cloud API with local fallback responses
+- The AI uses the OpenRouter API with the mistralai/mistral-small-3.2-24b-instruct-2506:free model
 - Conversation is auto-saved when you close it
 
 ### 5. Review Chat History
@@ -383,7 +387,24 @@ virtual-science-lab/
    VITE_APPWRITE_COLLECTION_ID=your-collection-id-from-step-6
    ```
 
-> Note: The chat history will automatically use Appwrite cloud storage when the database and collection IDs are provided. If these variables are not set, it will fall back to localStorage.
+### OpenRouter API Setup
+
+1. **Create Account**
+   - Go to [openrouter.ai](https://openrouter.ai/)
+   - Sign up for a free account
+
+2. **Get API Key**
+   - Navigate to the API Keys section
+   - Generate a new API key
+   - Copy the API key
+
+3. **Add to .env**
+
+   ```env
+   VITE_OPENROUTER_API_KEY=your-openrouter-api-key-here
+   ```
+
+> Note: The application uses the `mistralai/mistral-small-3.2-24b-instruct-2506:free` model which is a free and optimized option provided by OpenRouter. The chat history will automatically use Appwrite cloud storage when the database and collection IDs are provided. If these variables are not set, it will fall back to localStorage.
 
 ## 🌐 Deployment
 
@@ -474,7 +495,7 @@ Contributions are what make the open-source community amazing! Any contributions
 - Update documentation as needed
 - Test on multiple browsers
 - The chat history automatically uses Appwrite cloud storage when the required environment variables are set
-- AI requests are proxied through Vite to avoid CORS issues with the NLP Cloud API
+- AI requests are proxied through Vite to avoid CORS issues with the OpenRouter API
 
 ---
 
@@ -517,7 +538,7 @@ SOFTWARE.
 - [Matter.js](https://brm.io/matter-js/) - Physics engine
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
 - [Appwrite](https://appwrite.io/) - Backend platform
-- [NLP Cloud](https://nlpcloud.com/) - AI assistant API
+- [OpenRouter](https://openrouter.ai/) - AI assistant API
 
 ### Inspiration
 
@@ -530,7 +551,7 @@ SOFTWARE.
 - All contributors and testers
 - Open-source community
 - Stack Overflow for endless answers
-- NLP Cloud for providing access to Llama 2 models
+- OpenRouter for providing access to free AI models
 
 ---
 

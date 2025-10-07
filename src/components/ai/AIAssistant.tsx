@@ -60,7 +60,9 @@ export const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
         setIsLoading(true);
 
         try {
-                const conversationHistory = messages
+                // Limit conversation history to last 6 messages to prevent context overflow
+                const recentMessages = messages.slice(-6);
+                const conversationHistory = recentMessages
                     .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
                     .join('\n');
 
@@ -101,14 +103,26 @@ Assistant:`;
                 const apiError = error as APIError;
                 console.error('Error with AI response:', apiError);
 
-                const errorMessage: Message = {
+                let errorMessage = 'Sorry, I encountered an error. ';
+                
+                if (apiError.message.includes('API key is not configured')) {
+                    errorMessage += 'Please make sure you have set your OpenRouter API key in the VITE_OPENROUTER_API_KEY environment variable.';
+                } else if (apiError.message.includes('timed out')) {
+                    errorMessage += 'The request timed out. This might be due to a slow network connection or high demand on the API. Please try again.';
+                } else if (apiError.message.includes('Network error')) {
+                    errorMessage += 'There seems to be a network connectivity issue. Please check your internet connection and try again.';
+                } else {
+                    errorMessage += 'Please try again. If the problem persists, check that your API key is valid and your network connection is stable.';
+                }
+
+                const errorMessageObj: Message = {
                     id: (Date.now() + 1).toString(),
                     role: 'assistant',
-                    content: apiError.message || 'Sorry, I encountered an error. The AI service might be temporarily unavailable, but I have a fallback system that should work.',
+                    content: errorMessage,
                     timestamp: new Date(),
                 };
 
-            setMessages((prev) => [...prev, errorMessage]);
+            setMessages((prev) => [...prev, errorMessageObj]);
         } finally {
             setIsLoading(false);
         }

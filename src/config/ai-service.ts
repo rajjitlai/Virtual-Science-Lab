@@ -1,55 +1,105 @@
-// Using a completely free approach with local response generation
-// No API key or external service required
+// Using OpenRouter API with mistralai/mistral-small-3.2-24b-instruct-2506:free model
+// API key required for this service
+
+interface OpenRouterResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
+// Simple rate limiting - track last request time
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 1000; // 1 second minimum between requests
 
 /**
- * Simulates an AI model response using local pattern matching
- * This implementation doesn't require any API keys or external services
+ * Calls the OpenRouter API with the mistralai/mistral-small-3.2-24b-instruct-2506:free model
+ * This implementation requires an API key
  */
 export const callGemmaModel = async (prompt: string) => {
     try {
-        // Simulate network delay for realistic experience (300-800ms)
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 300));
+        // Get API key from environment variables
+        const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
         
-        // Generate response locally using pattern matching
-        return generateLocalResponse(prompt);
-    } catch (error) {
-        console.error("Error generating AI response:", error);
-        // Return a fallback response in case of any errors
-        return {
-            generated_text: "I'm sorry, I couldn't process your question. Please try again with a different question about science concepts."
-        };
-    }
-};
+        if (!apiKey) {
+            throw new Error('OpenRouter API key is not configured. Please set VITE_OPENROUTER_API_KEY in your .env file.');
+        }
 
-/**
- * Generates AI-like responses locally using pattern matching
- * This function provides educational responses to common science questions
- */
-const generateLocalResponse = (prompt: string) => {
-    // Extract the user's question from the prompt
-    const userQuestion = prompt.split("User: ").pop()?.split("\n")[0] || "";
-    
-    // Enhanced pattern matching for common science questions
-    if (userQuestion.toLowerCase().includes("vinegar") && userQuestion.toLowerCase().includes("baking soda")) {
+        // Simple rate limiting
+        const now = Date.now();
+        const timeSinceLastRequest = now - lastRequestTime;
+        if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+            const delay = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+            console.log(`Rate limiting: waiting ${delay}ms before next request`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        lastRequestTime = Date.now();
+
+        // Log the prompt length for debugging
+        console.log(`Sending prompt with ${prompt.length} characters`);
+        
+        // Set a reasonable timeout for the request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': window.location.origin, // Optional, for openrouter dashboard
+            },
+            body: JSON.stringify({
+                model: 'mistralai/mistral-small-3.2-24b-instruct-2506:free',
+                messages: [
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.7,
+                max_tokens: 500,
+            }),
+            signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        // Log response status for debugging
+        console.log(`API response status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`API error response: ${errorText}`);
+            throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
+        }
+
+        const data: OpenRouterResponse = await response.json();
+        console.log(`API response usage:`, data.usage);
+        
+        const content = data.choices[0]?.message?.content || "I'm sorry, I couldn't process your question. Please try again.";
+        
         return {
-            generated_text: "When vinegar (an acid) and baking soda (a base) mix, they create a chemical reaction! The reaction produces carbon dioxide gas, which creates bubbles and fizzing. This is an example of an acid-base reaction that's commonly used in science experiments and even in cooking. 🧪"
+            generated_text: content
         };
-    } else if (userQuestion.toLowerCase().includes("gravity")) {
-        return {
-            generated_text: "Gravity is the force that pulls objects toward each other. On Earth, it pulls everything toward the center of the planet. It's why things fall down instead of up! The strength of gravity depends on mass - bigger objects like planets have stronger gravity. That's why you weigh less on the Moon than on Earth, since the Moon has less mass. 🌍"
-        };
-    } else if (userQuestion.toLowerCase().includes("chemical reaction")) {
-        return {
-            generated_text: "A chemical reaction happens when substances (reactants) transform into new substances (products) by breaking and forming chemical bonds. Signs of a chemical reaction include color changes, temperature changes, gas production (bubbles), light emission, or precipitate formation. Chemical reactions are happening all around us - from cooking food to batteries powering devices! ⚗️"
-        };
-    } else if (userQuestion.toLowerCase().includes("atom") || userQuestion.toLowerCase().includes("molecule")) {
-        return {
-            generated_text: "Atoms are the basic building blocks of matter, made of protons, neutrons, and electrons. Molecules form when two or more atoms bond together. For example, water (H₂O) is a molecule made of two hydrogen atoms and one oxygen atom. The way atoms connect determines the properties of substances we see in everyday life! ⚛️"
-        };
-    } else {
-        return {
-            generated_text: "That's an interesting science question! I can help you explore this topic through our virtual lab tools. Science is all about curiosity and hands-on learning. What specific aspect would you like to investigate further? 🔬"
-        };
+    } catch (error: any) {
+        console.error("Error calling OpenRouter API:", error);
+        
+        // Handle timeout specifically
+        if (error.name === 'AbortError') {
+            throw new Error('The request to OpenRouter API timed out. Please check your network connection and try again.');
+        }
+        
+        // Handle network errors
+        if (error instanceof TypeError) {
+            throw new Error('Network error when connecting to OpenRouter API. Please check your internet connection and try again.');
+        }
+        
+        // Re-throw other errors
+        throw error;
     }
 };
 
