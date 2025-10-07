@@ -1,9 +1,29 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Mixture } from '../types/chemistry';
+import type { UserSettings } from '../types/settings';
 import { useAuth } from './AuthContext';
 import { databases } from '../config/appwrite';
 import { ID, Query } from 'appwrite';
+
+// Appwrite document types that reflect the actual structure of documents in the database
+interface AppwriteMixtureDocument {
+  $id: string;
+  $createdAt: string; // ISO date string
+  userId: string;
+  name: string;
+  chemicals: string; // JSON stringified array
+  color: string;
+}
+
+interface AppwriteUserDataDocument {
+  $id: string;
+  $createdAt: string; // ISO date string
+  userId: string;
+  type: 'tour' | 'settings';
+  isTourShown?: boolean;
+  settings?: string; // JSON stringified object
+}
 
 interface AppwriteContextType {
     isCloudStorage: boolean;
@@ -13,6 +33,8 @@ interface AppwriteContextType {
     clearAllMixtures: () => Promise<void>;
     getTourStatus: () => Promise<boolean>;
     setTourStatus: (status: boolean) => Promise<void>;
+    getUserSettings: () => Promise<UserSettings | null>;
+    saveUserSettings: (settings: UserSettings) => Promise<void>;
 }
 
 const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined);
@@ -20,48 +42,39 @@ const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined
 // Separate component for the provider to fix fast refresh issue
 const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
-    const isCloudStorage = !!import.meta.env.VITE_APPWRITE_DATABASE_ID && !!import.meta.env.VITE_APPWRITE_COLLECTION_ID;
+    // Check if all required Appwrite environment variables are set
+    const isCloudStorage = !!import.meta.env.VITE_APPWRITE_DATABASE_ID && 
+                          !!import.meta.env.VITE_APPWRITE_CHAT_COLLECTION_ID && 
+                          !!import.meta.env.VITE_APPWRITE_MIXTURES_COLLECTION_ID && 
+                          !!import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID;
     
     // Ensure Appwrite collections exist
     useEffect(() => {
         if (isCloudStorage) {
-            // The collections should be created manually in Appwrite dashboard
-            // This is just for documentation purposes
-            console.log('Appwrite cloud storage is enabled');
+            console.log('Appwrite cloud storage is enabled with separate collections');
+        } else {
+            console.warn('Appwrite cloud storage is not fully configured. Please set all required environment variables.');
         }
     }, [isCloudStorage]);
 
     const saveMixture = async (mixture: Mixture) => {
         if (!isCloudStorage || !user) {
-            // Fallback to localStorage
-            const savedMixtures = localStorage.getItem('recentMixtures');
-            let mixtures: Mixture[] = [];
-            if (savedMixtures) {
-                try {
-                    mixtures = JSON.parse(savedMixtures);
-                } catch (e) {
-                    console.error('Failed to parse recent mixtures', e);
-                }
-            }
-            // Add new mixture to the beginning and keep only last 10
-            const updatedMixtures = [mixture, ...mixtures].slice(0, 10);
-            localStorage.setItem('recentMixtures', JSON.stringify(updatedMixtures));
-            return;
+            throw new Error('Appwrite cloud storage is not configured or user is not authenticated');
         }
 
         try {
-            // Save to Appwrite database
+            // Save to Appwrite database in dedicated mixtures collection
+            // Appwrite automatically generates $id and $createdAt fields
             await databases.createDocument(
                 import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                import.meta.env.VITE_APPWRITE_COLLECTION_ID,
+                import.meta.env.VITE_APPWRITE_MIXTURES_COLLECTION_ID,
                 ID.unique(),
                 {
-                    type: 'mixture',
                     userId: user.$id,
                     name: mixture.name,
                     chemicals: JSON.stringify(mixture.chemicals),
                     color: mixture.color,
-                    createdAt: mixture.createdAt.toISOString(),
+                    // Removed manual createdAt field - Appwrite auto-generates $createdAt
                 }
             );
         } catch (error) {
@@ -72,36 +85,22 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
 
     const loadMixtures = async (): Promise<Mixture[]> => {
         if (!isCloudStorage || !user) {
-            // Fallback to localStorage
-            const savedMixtures = localStorage.getItem('recentMixtures');
-            if (savedMixtures) {
-                try {
-                    const parsedMixtures = JSON.parse(savedMixtures);
-                    // Convert date strings back to Date objects
-                    return parsedMixtures.map((mixture: any) => ({
-                        ...mixture,
-                        createdAt: new Date(mixture.createdAt)
-                    }));
-                } catch (e) {
-                    console.error('Failed to parse recent mixtures', e);
-                }
-            }
-            return [];
+            throw new Error('Appwrite cloud storage is not configured or user is not authenticated');
         }
 
         try {
-            // Load from Appwrite database
+            // Load from Appwrite database in dedicated mixtures collection
             const response = await databases.listDocuments(
                 import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                import.meta.env.VITE_APPWRITE_COLLECTION_ID,
+                import.meta.env.VITE_APPWRITE_MIXTURES_COLLECTION_ID,
                 [
-                    Query.equal('type', 'mixture'),
                     Query.equal('userId', user.$id),
                     Query.orderDesc('$createdAt'),
                     Query.limit(10)
                 ]
             );
 
+            // Map Appwrite documents to our Mixture type
             return response.documents.map((doc: any) => ({
                 id: doc.$id,
                 name: doc.name,
@@ -111,44 +110,20 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
             }));
         } catch (error) {
             console.error('Error loading mixtures from Appwrite:', error);
-            // Fallback to localStorage
-            const savedMixtures = localStorage.getItem('recentMixtures');
-            if (savedMixtures) {
-                try {
-                    const parsedMixtures = JSON.parse(savedMixtures);
-                    return parsedMixtures.map((mixture: any) => ({
-                        ...mixture,
-                        createdAt: new Date(mixture.createdAt)
-                    }));
-                } catch (e) {
-                    console.error('Failed to parse recent mixtures', e);
-                }
-            }
-            return [];
+            throw error;
         }
     };
 
     const deleteMixture = async (mixtureId: string) => {
         if (!isCloudStorage || !user) {
-            // Fallback to localStorage
-            const savedMixtures = localStorage.getItem('recentMixtures');
-            if (savedMixtures) {
-                try {
-                    const mixtures = JSON.parse(savedMixtures);
-                    const updatedMixtures = mixtures.filter((m: Mixture) => m.id !== mixtureId);
-                    localStorage.setItem('recentMixtures', JSON.stringify(updatedMixtures));
-                } catch (e) {
-                    console.error('Failed to parse recent mixtures', e);
-                }
-            }
-            return;
+            throw new Error('Appwrite cloud storage is not configured or user is not authenticated');
         }
 
         try {
-            // Delete from Appwrite database
+            // Delete from Appwrite database in dedicated mixtures collection
             await databases.deleteDocument(
                 import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                import.meta.env.VITE_APPWRITE_COLLECTION_ID,
+                import.meta.env.VITE_APPWRITE_MIXTURES_COLLECTION_ID,
                 mixtureId
             );
         } catch (error) {
@@ -159,18 +134,15 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
 
     const clearAllMixtures = async () => {
         if (!isCloudStorage || !user) {
-            // Fallback to localStorage
-            localStorage.removeItem('recentMixtures');
-            return;
+            throw new Error('Appwrite cloud storage is not configured or user is not authenticated');
         }
 
         try {
-            // Delete all mixtures from Appwrite database for this user
+            // Delete all mixtures from Appwrite database for this user in dedicated mixtures collection
             const response = await databases.listDocuments(
                 import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                import.meta.env.VITE_APPWRITE_COLLECTION_ID,
+                import.meta.env.VITE_APPWRITE_MIXTURES_COLLECTION_ID,
                 [
-                    Query.equal('type', 'mixture'),
                     Query.equal('userId', user.$id)
                 ]
             );
@@ -179,7 +151,7 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
             await Promise.all(response.documents.map(doc => 
                 databases.deleteDocument(
                     import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                    import.meta.env.VITE_APPWRITE_COLLECTION_ID,
+                    import.meta.env.VITE_APPWRITE_MIXTURES_COLLECTION_ID,
                     doc.$id
                 )
             ));
@@ -191,27 +163,17 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
 
     const getTourStatus = async (): Promise<boolean> => {
         if (!isCloudStorage || !user) {
-            // Fallback to localStorage
-            const savedSettings = localStorage.getItem('userSettings');
-            if (savedSettings) {
-                try {
-                    const settings = JSON.parse(savedSettings);
-                    return settings.isTourShown || false;
-                } catch (e) {
-                    console.error('Failed to parse user settings', e);
-                }
-            }
-            return false;
+            throw new Error('Appwrite cloud storage is not configured or user is not authenticated');
         }
 
         try {
-            // Load tour status from Appwrite database
+            // Load tour status from Appwrite database in dedicated user data collection
             const response = await databases.listDocuments(
                 import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                import.meta.env.VITE_APPWRITE_COLLECTION_ID,
+                import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
                 [
-                    Query.equal('type', 'tour'),
                     Query.equal('userId', user.$id),
+                    Query.equal('type', 'tour'),
                     Query.limit(1)
                 ]
             );
@@ -222,53 +184,23 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
             return false;
         } catch (error) {
             console.error('Error loading tour status from Appwrite:', error);
-            // Fallback to localStorage
-            const savedSettings = localStorage.getItem('userSettings');
-            if (savedSettings) {
-                try {
-                    const settings = JSON.parse(savedSettings);
-                    return settings.isTourShown || false;
-                } catch (e) {
-                    console.error('Failed to parse user settings', e);
-                }
-            }
-            return false;
+            throw error;
         }
     };
 
     const setTourStatus = async (status: boolean) => {
         if (!isCloudStorage || !user) {
-            // Fallback to localStorage
-            const savedSettings = localStorage.getItem('userSettings');
-            let settings = {
-                theme: 'system',
-                notifications: true,
-                soundEffects: true,
-                autoSaveExperiments: false,
-                defaultLab: 'chemistry',
-                isTourShown: status
-            };
-            
-            if (savedSettings) {
-                try {
-                    settings = { ...JSON.parse(savedSettings), isTourShown: status };
-                } catch (e) {
-                    console.error('Failed to parse user settings', e);
-                }
-            }
-            
-            localStorage.setItem('userSettings', JSON.stringify(settings));
-            return;
+            throw new Error('Appwrite cloud storage is not configured or user is not authenticated');
         }
 
         try {
             // Check if tour document already exists
             const response = await databases.listDocuments(
                 import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                import.meta.env.VITE_APPWRITE_COLLECTION_ID,
+                import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
                 [
-                    Query.equal('type', 'tour'),
                     Query.equal('userId', user.$id),
+                    Query.equal('type', 'tour'),
                     Query.limit(1)
                 ]
             );
@@ -277,7 +209,7 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
                 // Update existing tour document
                 await databases.updateDocument(
                     import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                    import.meta.env.VITE_APPWRITE_COLLECTION_ID,
+                    import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
                     response.documents[0].$id,
                     {
                         isTourShown: status
@@ -287,17 +219,90 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
                 // Create new tour document
                 await databases.createDocument(
                     import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                    import.meta.env.VITE_APPWRITE_COLLECTION_ID,
+                    import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
                     ID.unique(),
                     {
-                        type: 'tour',
                         userId: user.$id,
+                        type: 'tour',
                         isTourShown: status
                     }
                 );
             }
         } catch (error) {
             console.error('Error saving tour status to Appwrite:', error);
+            throw error;
+        }
+    };
+
+    const getUserSettings = async (): Promise<UserSettings | null> => {
+        if (!isCloudStorage || !user) {
+            throw new Error('Appwrite cloud storage is not configured or user is not authenticated');
+        }
+
+        try {
+            // Load user settings from Appwrite database in dedicated user data collection
+            const response = await databases.listDocuments(
+                import.meta.env.VITE_APPWRITE_DATABASE_ID,
+                import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
+                [
+                    Query.equal('userId', user.$id),
+                    Query.equal('type', 'settings'),
+                    Query.limit(1)
+                ]
+            );
+
+            if (response.documents.length > 0) {
+                return JSON.parse(response.documents[0].settings || '{}');
+            }
+            return null;
+        } catch (error) {
+            console.error('Error loading user settings from Appwrite:', error);
+            throw error;
+        }
+    };
+
+    const saveUserSettings = async (settings: UserSettings) => {
+        if (!isCloudStorage || !user) {
+            throw new Error('Appwrite cloud storage is not configured or user is not authenticated');
+        }
+
+        try {
+            // Check if settings document already exists
+            const response = await databases.listDocuments(
+                import.meta.env.VITE_APPWRITE_DATABASE_ID,
+                import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
+                [
+                    Query.equal('userId', user.$id),
+                    Query.equal('type', 'settings'),
+                    Query.limit(1)
+                ]
+            );
+
+            if (response.documents.length > 0) {
+                // Update existing settings document
+                await databases.updateDocument(
+                    import.meta.env.VITE_APPWRITE_DATABASE_ID,
+                    import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
+                    response.documents[0].$id,
+                    {
+                        settings: JSON.stringify(settings)
+                    }
+                );
+            } else {
+                // Create new settings document
+                await databases.createDocument(
+                    import.meta.env.VITE_APPWRITE_DATABASE_ID,
+                    import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
+                    ID.unique(),
+                    {
+                        userId: user.$id,
+                        type: 'settings',
+                        settings: JSON.stringify(settings)
+                    }
+                );
+            }
+        } catch (error) {
+            console.error('Error saving user settings to Appwrite:', error);
             throw error;
         }
     };
@@ -310,7 +315,9 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
             deleteMixture, 
             clearAllMixtures,
             getTourStatus,
-            setTourStatus
+            setTourStatus,
+            getUserSettings,
+            saveUserSettings
         }}>
             {children}
         </AppwriteContext.Provider>

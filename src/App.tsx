@@ -15,6 +15,8 @@ import { AIAssistant } from './components/ai/AIAssistant';
 import { AIButton } from './components/ai/AIButton';
 import { Settings } from './components/settings/Settings';
 import { ChatHistory } from './components/ai/ChatHistory';
+import type { UserSettings } from './types/settings';
+import { DEFAULT_SETTINGS } from './types/settings';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -31,16 +33,37 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const Lab = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
-  const { getTourStatus, setTourStatus } = useAppwrite();
+  const { getTourStatus, setTourStatus, getUserSettings, saveUserSettings, isCloudStorage } = useAppwrite();
   const [activeTab, setActiveTab] = useState<'chemistry' | 'physics'>('chemistry');
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [showWelcomeTour, setShowWelcomeTour] = useState(false);
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
+  const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
-    // Check if user has seen welcome tour based on Appwrite or localStorage
+    // Load user settings
+    const loadUserSettings = async () => {
+      try {
+        const settings = await getUserSettings();
+        if (settings) {
+          setUserSettings(settings);
+          // Apply theme from settings
+          if (settings.theme !== 'system') {
+            document.documentElement.classList.toggle('dark', settings.theme === 'dark');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user settings:', error);
+      }
+    };
+
+    loadUserSettings();
+  }, [getUserSettings]);
+
+  useEffect(() => {
+    // Check if user has seen welcome tour
     const checkTourStatus = async () => {
       try {
         const isTourShown = await getTourStatus();
@@ -50,22 +73,9 @@ const Lab = () => {
         }
       } catch (error) {
         console.error('Error checking tour status:', error);
-        // Fallback to localStorage approach
-        const savedSettings = localStorage.getItem('userSettings');
-        let isTourShown = false;
-        
-        if (savedSettings) {
-          try {
-            const settings = JSON.parse(savedSettings);
-            isTourShown = settings.isTourShown || false;
-          } catch (e) {
-            console.error('Failed to parse user settings', e);
-          }
-        }
-
-        // Only show tour if it hasn't been shown yet
-        if (!isTourShown) {
-          setShowWelcomeTour(true);
+        // If Appwrite is not configured, we can't show the tour
+        if (!isCloudStorage) {
+          console.warn('Appwrite not configured - tour functionality disabled');
         }
       }
     };
@@ -77,7 +87,7 @@ const Lab = () => {
       setHasShownWelcome(true);
       showToast(`Welcome back, ${user?.name}!`, 'success');
     }
-  }, [user, showToast, hasShownWelcome, getTourStatus]);
+  }, [user, showToast, hasShownWelcome, getTourStatus, isCloudStorage]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -146,37 +156,24 @@ const Lab = () => {
         onClose={() => setIsAIOpen(false)}
         context={activeTab}
       />
-      <Settings isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <Settings 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        initialSettings={userSettings}
+        onSaveSettings={saveUserSettings}
+      />
       <ChatHistory isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
 
       {showWelcomeTour && (
         <WelcomeTour onComplete={async () => {
           setShowWelcomeTour(false);
-          // Save that tour has been shown using Appwrite or fallback to localStorage
+          // Save that tour has been shown
           try {
             await setTourStatus(true);
           } catch (error) {
             console.error('Error saving tour status:', error);
-            // Fallback to localStorage
-            const savedSettings = localStorage.getItem('userSettings');
-            if (savedSettings) {
-              try {
-                const settings = JSON.parse(savedSettings);
-                settings.isTourShown = true;
-                localStorage.setItem('userSettings', JSON.stringify(settings));
-              } catch (e) {
-                console.error('Failed to update user settings', e);
-              }
-            } else {
-              // Create settings with tour shown
-              localStorage.setItem('userSettings', JSON.stringify({
-                theme: 'system',
-                notifications: true,
-                soundEffects: true,
-                autoSaveExperiments: false,
-                defaultLab: 'chemistry',
-                isTourShown: true
-              }));
+            if (!isCloudStorage) {
+              console.warn('Appwrite not configured - tour status not saved');
             }
           }
         }} />

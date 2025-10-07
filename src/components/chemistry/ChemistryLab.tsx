@@ -20,34 +20,20 @@ export const ChemistryLab = () => {
     const [recentMixtures, setRecentMixtures] = useState<Mixture[]>([]);
     const [isAIProcessing, setIsAIProcessing] = useState(false);
 
-    // Load recent mixtures from Appwrite or localStorage
+    // Load recent mixtures from Appwrite
     useEffect(() => {
         const loadMixturesData = async () => {
             try {
                 const mixtures = await loadMixtures();
                 setRecentMixtures(mixtures);
             } catch (error) {
-                console.error('Failed to load mixtures:', error);
-                // Fallback to localStorage
-                const savedMixtures = localStorage.getItem('recentMixtures');
-                if (savedMixtures) {
-                    try {
-                        const parsedMixtures = JSON.parse(savedMixtures);
-                        // Convert date strings back to Date objects
-                        const mixturesWithDates = parsedMixtures.map((mixture: any) => ({
-                            ...mixture,
-                            createdAt: new Date(mixture.createdAt)
-                        }));
-                        setRecentMixtures(mixturesWithDates);
-                    } catch (e) {
-                        console.error('Failed to parse recent mixtures', e);
-                    }
-                }
+                console.error('Failed to load mixtures from Appwrite:', error);
+                showToast('Failed to load saved mixtures', 'error');
             }
         };
 
         loadMixturesData();
-    }, [loadMixtures]);
+    }, [loadMixtures, showToast]);
 
     const handleAddChemical = (chemical: Chemical) => {
         const newSelection = [...selectedChemicals, chemical];
@@ -175,7 +161,7 @@ Respond ONLY with JSON in this format:
         };
 
         try {
-            // Save mixture using Appwrite or fallback to localStorage
+            // Save mixture using Appwrite
             await saveMixture(newMixture);
             
             // Update local state
@@ -186,15 +172,8 @@ Respond ONLY with JSON in this format:
             playBeep(523, 0.2); // Higher pitch for success
             showToast(`Saved mixture: ${mixtureName}`, 'success');
         } catch (error) {
-            console.error('Failed to save mixture:', error);
-            // Fallback to localStorage
-            const updatedMixtures = [newMixture, ...recentMixtures].slice(0, 10); // Keep only last 10
-            setRecentMixtures(updatedMixtures);
-            localStorage.setItem('recentMixtures', JSON.stringify(updatedMixtures));
-            
-            // Play sound and show message
-            playBeep(523, 0.2); // Higher pitch for success
-            showToast(`Saved mixture locally: ${mixtureName}`, 'success');
+            console.error('Failed to save mixture to Appwrite:', error);
+            showToast('Failed to save mixture', 'error');
         }
     };
 

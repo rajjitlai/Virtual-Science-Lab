@@ -31,7 +31,7 @@ A modern, interactive science laboratory application built with React, TypeScrip
 ### 💬 Chat History
 
 - **Auto-Save Conversations**: Never lose your discussions
-- **Automatic Storage Selection**: Uses cloud storage when configured, falls back to local storage
+- **Cloud Storage Only**: All data stored in Appwrite database (no localStorage fallback)
 - **Searchable Archive**: Review past conversations
 - **Delete Options**: Remove individual chats or clear all
 
@@ -111,7 +111,7 @@ src/
 
 ### Backend & Services
 
-- **Appwrite** - Authentication and backend (optional database for chat history, mixtures, and tour settings)
+- **Appwrite** - Authentication and backend (required database for all data storage)
 - **OpenRouter API** - AI assistant (google/gemma-3n-e2b-it:free model)
 - **Vite Proxy** - Handles CORS for AI API requests
 
@@ -148,7 +148,7 @@ src/
 - View all past conversations
 - Click any chat to see full details
 - Delete individual chats or clear all
-- Chat history is automatically stored in the cloud when Appwrite is configured, otherwise it's stored locally
+- All chat history is stored in the cloud via Appwrite
 
 ### 5. Manage Chemical Mixtures
 
@@ -202,28 +202,39 @@ src/
    - In your new database, click "Create Collection"
    - Name it "Chat Sessions"
    - Add the following attributes:
+     - `userId` (string, 255 characters, required) - User identifier
      - `title` (string, 255 characters, required)
      - `context` (string, 50 characters, optional)
      - `messages` (string, required - JSON stringified array)
-   - Note: The `createdAt` timestamp is automatically provided by Appwrite and should not be manually added
+   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
    - Add the following permissions:
      - Read: Any
      - Write: Any
    - Copy the Collection ID for use in environment variables
 
-   **B. User Data Collection**
+   **B. Mixtures Collection**
+   - In your database, click "Create Collection"
+   - Name it "Mixtures"
+   - Add the following attributes:
+     - `userId` (string, 255 characters, required) - User identifier
+     - `name` (string, 255 characters, required) - Mixture name
+     - `chemicals` (string, required - JSON stringified array) - Chemical data
+     - `color` (string, 7 characters, required) - Hex color code
+   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
+   - Add the following permissions:
+     - Read: Any
+     - Write: Any
+   - Copy the Collection ID for use in environment variables
+
+   **C. User Data Collection**
    - In your database, click "Create Collection"
    - Name it "User Data"
    - Add the following attributes:
-     - `type` (string, 50 characters, required) - Used to distinguish between "mixture", "tour", and "settings"
      - `userId` (string, 255 characters, required) - User identifier
-     - `name` (string, 255 characters, optional) - Mixture name or setting name
-     - `chemicals` (string, optional - JSON stringified array) - Chemical data for mixtures
-     - `color` (string, 7 characters, optional) - Hex color code for mixtures
+     - `type` (string, 50 characters, required) - Used to distinguish between "tour" and "settings"
      - `isTourShown` (boolean, optional) - Tour completion status
      - `settings` (string, optional - JSON stringified object) - User settings data
-     - `data` (string, optional - JSON stringified object) - Generic data field
-   - Note: The `createdAt` timestamp is automatically provided by Appwrite and should not be manually added
+   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
    - Add the following permissions:
      - Read: Any
      - Write: Any
@@ -234,7 +245,9 @@ src/
    ```env
    VITE_APPWRITE_PROJECT_ID=your-project-id-from-step-2
    VITE_APPWRITE_DATABASE_ID=your-database-id-from-step-5
-   VITE_APPWRITE_COLLECTION_ID=your-collection-id-from-step-6
+   VITE_APPWRITE_CHAT_COLLECTION_ID=your-chat-collection-id-from-step-6A
+   VITE_APPWRITE_MIXTURES_COLLECTION_ID=your-mixtures-collection-id-from-step-6B
+   VITE_APPWRITE_USER_DATA_COLLECTION_ID=your-user-data-collection-id-from-step-6C
    ```
 
 ### OpenRouter API Setup
@@ -254,7 +267,7 @@ src/
    VITE_OPENROUTER_API_KEY=your-openrouter-api-key-here
    ```
 
-> Note: The application uses the `google/gemma-3n-e2b-it:free` model which is a free and optimized option provided by OpenRouter. The chat history, mixtures, and tour settings will automatically use Appwrite cloud storage when the database and collection IDs are provided. If these variables are not set, it will fall back to localStorage.
+> Note: The application now uses separate collections for different data types and requires all Appwrite environment variables to be set. There is no fallback to localStorage - all data is stored in the Appwrite database. Appwrite automatically generates `$id` and `$createdAt` fields for all documents.
 
 ## 🌐 Deployment
 
@@ -341,7 +354,7 @@ Virtual Science Lab is an educational web application that brings science experi
 - **AI-Powered Learning**: Get instant answers to science questions
 - **Interactive & Engaging**: Visual, hands-on learning experience
 - **Free & Open Source**: Available to everyone
-- **Cloud-Ready**: Optional Appwrite integration for user accounts and data storage
+- **Cloud-Only Storage**: All data securely stored in Appwrite database
 
 ---
 
@@ -378,7 +391,7 @@ Virtual Science Lab is an educational web application that brings science experi
 ### 💬 Chat History
 
 - **Auto-Save Conversations**: Never lose your discussions
-- **Automatic Storage Selection**: Uses cloud storage when configured, falls back to local storage
+- **Cloud Storage Only**: All data stored in Appwrite database (no localStorage fallback)
 - **Searchable Archive**: Review past conversations
 - **Delete Options**: Remove individual chats or clear all
 - **Context Tags**: See which lab each conversation was in
@@ -455,7 +468,7 @@ Virtual Science Lab is an educational web application that brings science experi
 
 ### Backend & Services
 
-- **Appwrite** - Authentication and backend (optional database for chat history)
+- **Appwrite** - Authentication and backend (required database for all data storage)
 - **OpenRouter API** - AI assistant (google/gemma-3n-e2b-it:free model)
 - **Vite Proxy** - Handles CORS for AI API requests
 
@@ -515,13 +528,15 @@ Virtual Science Lab is an educational web application that brings science experi
 Edit `.env` file with your credentials:
 
 ```env
-# Appwrite Configuration
+# Appwrite Configuration (required for all data storage)
 VITE_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
 VITE_APPWRITE_PROJECT_ID=your-project-id-here
 VITE_APPWRITE_DATABASE_ID=your-database-id-here
-VITE_APPWRITE_COLLECTION_ID=your-collection-id-here
+VITE_APPWRITE_CHAT_COLLECTION_ID=your-chat-collection-id-here
+VITE_APPWRITE_MIXTURES_COLLECTION_ID=your-mixtures-collection-id-here
+VITE_APPWRITE_USER_DATA_COLLECTION_ID=your-user-data-collection-id-here
 
-# OpenRouter API Configuration
+# OpenRouter API Configuration (required for AI assistant)
 VITE_OPENROUTER_API_KEY=your-openrouter-api-key-here
 ```
 
@@ -563,7 +578,7 @@ VITE_OPENROUTER_API_KEY=your-openrouter-api-key-here
 - View all past conversations
 - Click any chat to see full details
 - Delete individual chats or clear all
-- Chat history is automatically stored in the cloud when Appwrite is configured, otherwise it's stored locally
+- All chat history is stored in the cloud via Appwrite
 
 ### 6. Customize Settings
 
@@ -653,19 +668,50 @@ virtual-science-lab/
    - Add `http://localhost:5173` for development
    - Add your production URL later
 
-5. **Create Database for Chat History**
+5. **Create Database for Science Lab Data**
    - Go to **Databases** → **Create Database**
-   - Name it "Chat History"
+   - Name it "Science Lab Data"
    - Copy your Database ID for use in environment variables
 
-6. **Create Chat Collection**
+6. **Create Collections**
+
+   **A. Chat Sessions Collection**
    - In your new database, click "Create Collection"
    - Name it "Chat Sessions"
    - Add the following attributes:
+     - `userId` (string, 255 characters, required) - User identifier
      - `title` (string, 255 characters, required)
      - `context` (string, 50 characters, optional)
      - `messages` (string, required - JSON stringified array)
-   - Note: The `createdAt` timestamp is automatically provided by Appwrite and should not be manually added
+   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
+   - Add the following permissions:
+     - Read: Any
+     - Write: Any
+   - Copy the Collection ID for use in environment variables
+
+   **B. Mixtures Collection**
+   - In your database, click "Create Collection"
+   - Name it "Mixtures"
+   - Add the following attributes:
+     - `userId` (string, 255 characters, required) - User identifier
+     - `name` (string, 255 characters, required) - Mixture name
+     - `chemicals` (string, required - JSON stringified array) - Chemical data
+     - `color` (string, 7 characters, required) - Hex color code
+   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
+   - Add the following permissions:
+     - Read: Any
+     - Write: Any
+   - Copy the Collection ID for use in environment variables
+
+   **C. User Data Collection**
+   - In your database, click "Create Collection"
+   - Name it "User Data"
+   - Add the following attributes:
+     - `userId` (string, 255 characters, required) - User identifier
+     - `type` (string, 50 characters, required) - Used to distinguish between "tour" and "settings"
+     - `isTourShown` (boolean, optional) - Tour completion status
+     - `settings` (string, optional - JSON stringified object) - User settings data
+   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
    - Add the following permissions:
      - Read: Any
      - Write: Any
@@ -676,7 +722,9 @@ virtual-science-lab/
    ```env
    VITE_APPWRITE_PROJECT_ID=your-project-id-from-step-2
    VITE_APPWRITE_DATABASE_ID=your-database-id-from-step-5
-   VITE_APPWRITE_COLLECTION_ID=your-collection-id-from-step-6
+   VITE_APPWRITE_CHAT_COLLECTION_ID=your-chat-collection-id-from-step-6A
+   VITE_APPWRITE_MIXTURES_COLLECTION_ID=your-mixtures-collection-id-from-step-6B
+   VITE_APPWRITE_USER_DATA_COLLECTION_ID=your-user-data-collection-id-from-step-6C
    ```
 
 ### OpenRouter API Setup
@@ -696,7 +744,7 @@ virtual-science-lab/
    VITE_OPENROUTER_API_KEY=your-openrouter-api-key-here
    ```
 
-> Note: The application uses the `google/gemma-3n-e2b-it:free` model which is a free and optimized option provided by OpenRouter. The chat history will automatically use Appwrite cloud storage when the database and collection IDs are provided. If these variables are not set, it will fall back to localStorage.
+> Note: The application now uses separate collections for different data types and requires all Appwrite environment variables to be set. There is no fallback to localStorage - all data is stored in the Appwrite database. Appwrite automatically generates `$id` and `$createdAt` fields for all documents.
 
 ## 🌐 Deployment
 
@@ -786,7 +834,7 @@ Contributions are what make the open-source community amazing! Any contributions
 - Add comments for complex logic
 - Update documentation as needed
 - Test on multiple browsers
-- The chat history automatically uses Appwrite cloud storage when the required environment variables are set
+- All data is now stored in separate Appwrite collections with no localStorage fallback
 - AI requests are proxied through Vite to avoid CORS issues with the OpenRouter API
 
 ---

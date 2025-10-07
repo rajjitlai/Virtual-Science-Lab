@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useAppwrite } from '../../contexts/AppwriteContext';
 
 interface WelcomeTourProps {
     onComplete: () => void;
 }
 
 export const WelcomeTour = ({ onComplete }: WelcomeTourProps) => {
+    const { setTourStatus } = useAppwrite();
     const [step, setStep] = useState(0);
 
     const steps = [
@@ -40,17 +42,25 @@ export const WelcomeTour = ({ onComplete }: WelcomeTourProps) => {
         }
     ];
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (step < steps.length - 1) {
             setStep(step + 1);
         } else {
-            localStorage.setItem('welcomeTourCompleted', 'true');
+            try {
+                await setTourStatus(true);
+            } catch (error) {
+                console.error('Error saving tour status:', error);
+            }
             onComplete();
         }
     };
 
-    const handleSkip = () => {
-        localStorage.setItem('welcomeTourCompleted', 'true');
+    const handleSkip = async () => {
+        try {
+            await setTourStatus(true);
+        } catch (error) {
+            console.error('Error saving tour status:', error);
+        }
         onComplete();
     };
 

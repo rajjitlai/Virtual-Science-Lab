@@ -22,6 +22,17 @@ export interface Mixture {
     color: string;
 }
 
+// Appwrite document type (for reference)
+// Note: $id and $createdAt are automatically provided by Appwrite and should not be manually set
+export interface AppwriteMixtureDocument {
+    $id: string;
+    $createdAt: string; // Automatically set by Appwrite
+    userId: string;
+    name: string;
+    chemicals: string; // JSON stringified array
+    color: string;
+}
+
 export const CHEMICALS: Chemical[] = [
     { id: 'water', name: 'Water', formula: 'H₂O', color: '#00aaff', state: 'liquid', pH: 7 },
     { id: 'vinegar', name: 'Vinegar', formula: 'CH₃COOH', color: '#ffeeaa', state: 'liquid', pH: 3 },

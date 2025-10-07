@@ -1,36 +1,71 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAppwrite } from '../../contexts/AppwriteContext';
 import { DEFAULT_SETTINGS } from '../../types/settings';
 import type { UserSettings } from '../../types/settings';
 
 interface SettingsProps {
     isOpen: boolean;
     onClose: () => void;
+    initialSettings?: UserSettings;
+    onSaveSettings?: (settings: UserSettings) => Promise<void>;
 }
 
-export const Settings = ({ isOpen, onClose }: SettingsProps) => {
+export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: SettingsProps) => {
     const { user, logout } = useAuth();
     const { theme, setTheme } = useTheme();
-    const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
+    const { getUserSettings, saveUserSettings } = useAppwrite();
+    const [settings, setSettings] = useState<UserSettings>(initialSettings || DEFAULT_SETTINGS);
     const [activeSection, setActiveSection] = useState<'profile' | 'appearance' | 'preferences'>('profile');
 
     useEffect(() => {
-        // Load settings from localStorage
-        const savedSettings = localStorage.getItem('userSettings');
-        if (savedSettings) {
-            setSettings(JSON.parse(savedSettings));
+        // If initialSettings is provided, use it
+        if (initialSettings) {
+            setSettings(initialSettings);
+            return;
         }
-    }, []);
+        
+        // Otherwise, load settings from Appwrite
+        const loadSettings = async () => {
+            try {
+                const savedSettings = await getUserSettings();
+                if (savedSettings) {
+                    setSettings(savedSettings);
+                }
+            } catch (error) {
+                console.error('Error loading user settings:', error);
+            }
+        };
 
-    const saveSettings = (newSettings: UserSettings) => {
+        loadSettings();
+    }, [initialSettings, getUserSettings]);
+
+    const saveSettings = async (newSettings: UserSettings) => {
         setSettings(newSettings);
-        localStorage.setItem('userSettings', JSON.stringify(newSettings));
+        
+        // Try to save to Appwrite first
+        try {
+            await saveUserSettings(newSettings);
+        } catch (error) {
+            console.error('Error saving settings to Appwrite:', error);
+            // If Appwrite fails, fallback to localStorage
+            localStorage.setItem('userSettings', JSON.stringify(newSettings));
+        }
+        
+        // Also call the onSaveSettings prop if provided
+        if (onSaveSettings) {
+            try {
+                await onSaveSettings(newSettings);
+            } catch (error) {
+                console.error('Error in onSaveSettings callback:', error);
+            }
+        }
     };
 
-    const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
+    const handleThemeChange = async (newTheme: 'light' | 'dark' | 'system') => {
         setTheme(newTheme);
-        saveSettings({ ...settings, theme: newTheme });
+        await saveSettings({ ...settings, theme: newTheme });
     };
 
     if (!isOpen) return null;
