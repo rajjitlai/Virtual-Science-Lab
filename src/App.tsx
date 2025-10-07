@@ -35,6 +35,7 @@ const Lab = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [showWelcomeTour, setShowWelcomeTour] = useState(false);
+  const [hasShownWelcome, setHasShownWelcome] = useState(false);
 
   useEffect(() => {
     // Check if user has seen welcome tour
@@ -43,11 +44,12 @@ const Lab = () => {
       setShowWelcomeTour(true);
     }
 
-    // Welcome message
-    if (user?.name) {
+    // Welcome message - only show once per session
+    if (user?.name && !hasShownWelcome) {
+      setHasShownWelcome(true);
       showToast(`Welcome back, ${user?.name}!`, 'success');
     }
-  }, [user, showToast]);
+  }, [user, showToast, hasShownWelcome]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -83,7 +85,7 @@ const Lab = () => {
           <button
             onClick={() => {
               setActiveTab('chemistry');
-              showToast('Switched to Chemistry Lab', 'info');
+              setTimeout(() => showToast('Switched to Chemistry Lab', 'info'), 0);
             }}
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'chemistry'
                 ? 'bg-indigo-600 text-white shadow-lg'
@@ -95,7 +97,7 @@ const Lab = () => {
           <button
             onClick={() => {
               setActiveTab('physics');
-              showToast('Switched to Physics Lab', 'info');
+              setTimeout(() => showToast('Switched to Physics Lab', 'info'), 0);
             }}
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'physics'
                 ? 'bg-indigo-600 text-white shadow-lg'

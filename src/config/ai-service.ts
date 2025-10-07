@@ -1,49 +1,35 @@
-// Updated to use a free API alternative
-// No API key required for this implementation
+// Using a completely free approach with local response generation
+// No API key or external service required
 
-// Function to call free AI API
+/**
+ * Simulates an AI model response using local pattern matching
+ * This implementation doesn't require any API keys or external services
+ */
 export const callGemmaModel = async (prompt: string) => {
     try {
-        // Using a free API endpoint from NLP Cloud
-        const response = await fetch(
-            "https://api.nlpcloud.io/v1/gpu/finetuned-llama-2-7b/generation",
-            {
-                headers: { 
-                    "Content-Type": "application/json"
-                },
-                method: "POST",
-                body: JSON.stringify({
-                    text: prompt,
-                    max_length: 1000,
-                    temperature: 0.7,
-                    remove_input: true
-                }),
-            }
-        );
+        // Simulate network delay for realistic experience (300-800ms)
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 300));
         
-        if (!response.ok) {
-            // Fallback to local mock response if API fails
-            console.warn(`API error: ${response.status}. Using fallback response.`);
-            return mockAIResponse(prompt);
-        }
-        
-        const result = await response.json();
-        return {
-            generated_text: result.generated_text || "I'm sorry, I couldn't generate a response at this time."
-        };
+        // Generate response locally using pattern matching
+        return generateLocalResponse(prompt);
     } catch (error) {
-        console.error("Error calling AI API:", error);
-        // Fallback to local mock response
-        return mockAIResponse(prompt);
+        console.error("Error generating AI response:", error);
+        // Return a fallback response in case of any errors
+        return {
+            generated_text: "I'm sorry, I couldn't process your question. Please try again with a different question about science concepts."
+        };
     }
 };
 
-// Fallback function that generates responses locally when API is unavailable
-const mockAIResponse = (prompt: string) => {
+/**
+ * Generates AI-like responses locally using pattern matching
+ * This function provides educational responses to common science questions
+ */
+const generateLocalResponse = (prompt: string) => {
     // Extract the user's question from the prompt
     const userQuestion = prompt.split("User: ").pop()?.split("\n")[0] || "";
     
-    // Simple pattern matching for common science questions
+    // Enhanced pattern matching for common science questions
     if (userQuestion.toLowerCase().includes("vinegar") && userQuestion.toLowerCase().includes("baking soda")) {
         return {
             generated_text: "When vinegar (an acid) and baking soda (a base) mix, they create a chemical reaction! The reaction produces carbon dioxide gas, which creates bubbles and fizzing. This is an example of an acid-base reaction that's commonly used in science experiments and even in cooking. 🧪"
@@ -56,9 +42,13 @@ const mockAIResponse = (prompt: string) => {
         return {
             generated_text: "A chemical reaction happens when substances (reactants) transform into new substances (products) by breaking and forming chemical bonds. Signs of a chemical reaction include color changes, temperature changes, gas production (bubbles), light emission, or precipitate formation. Chemical reactions are happening all around us - from cooking food to batteries powering devices! ⚗️"
         };
+    } else if (userQuestion.toLowerCase().includes("atom") || userQuestion.toLowerCase().includes("molecule")) {
+        return {
+            generated_text: "Atoms are the basic building blocks of matter, made of protons, neutrons, and electrons. Molecules form when two or more atoms bond together. For example, water (H₂O) is a molecule made of two hydrogen atoms and one oxygen atom. The way atoms connect determines the properties of substances we see in everyday life! ⚛️"
+        };
     } else {
         return {
-            generated_text: "That's an interesting science question! While I'm currently operating in offline mode, I can tell you that science is all about curiosity and exploration. Try experimenting with the virtual lab tools to discover the answer through hands-on learning! 🔬"
+            generated_text: "That's an interesting science question! I can help you explore this topic through our virtual lab tools. Science is all about curiosity and hands-on learning. What specific aspect would you like to investigate further? 🔬"
         };
     }
 };

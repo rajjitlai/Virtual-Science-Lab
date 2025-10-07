@@ -8,7 +8,7 @@ interface ChatHistoryProps {
 }
 
 export const ChatHistory = ({ isOpen, onClose }: ChatHistoryProps) => {
-    const { sessions, deleteSession, clearAllSessions } = useChatHistory();
+    const { sessions, deleteSession, clearAllSessions, isCloudStorage } = useChatHistory();
     const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -44,7 +44,7 @@ export const ChatHistory = ({ isOpen, onClose }: ChatHistoryProps) => {
                 {/* Sidebar - Session List */}
                 <div className="w-80 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col">
                     <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex justify-between items-center mb-4">
+                        <div className="flex justify-between items-center mb-2">
                             <h2 className="text-xl font-bold text-gray-800 dark:text-white">
                                 💬 Chat History
                             </h2>
@@ -55,7 +55,11 @@ export const ChatHistory = ({ isOpen, onClose }: ChatHistoryProps) => {
                                 ✕
                             </button>
                         </div>
-
+                        <div className="flex items-center mb-2">
+                            <span className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                                {isCloudStorage ? '☁️ Cloud Storage' : '💾 Local Storage'}
+                            </span>
+                        </div>
                         {sessions.length > 0 && (
                             <button
                                 onClick={() => setShowDeleteConfirm(true)}

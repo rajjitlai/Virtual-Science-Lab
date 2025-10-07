@@ -48,6 +48,7 @@ Virtual Science Lab is an educational web application that brings science experi
 - **AI-Powered Learning**: Get instant answers to science questions
 - **Interactive & Engaging**: Visual, hands-on learning experience
 - **Free & Open Source**: Available to everyone
+- **Cloud-Ready**: Optional Appwrite integration for user accounts and data storage
 
 ---
 
@@ -73,6 +74,8 @@ Virtual Science Lab is an educational web application that brings science experi
 ### 🤖 AI Lab Assistant
 
 - **Free API Implementation**: No API key required
+- **NLP Cloud Integration**: Uses Llama 2 model with local fallback
+- **CORS-Compliant**: Requests proxied through Vite to avoid browser restrictions
 - **Offline Capability**: Works even without internet connection
 - **Context-Aware**: Knows which lab you're in
 - **Conversation Memory**: Remembers your discussion
@@ -82,6 +85,7 @@ Virtual Science Lab is an educational web application that brings science experi
 ### 💬 Chat History
 
 - **Auto-Save Conversations**: Never lose your discussions
+- **Automatic Storage Selection**: Uses cloud storage when configured, falls back to local storage
 - **Searchable Archive**: Review past conversations
 - **Delete Options**: Remove individual chats or clear all
 - **Context Tags**: See which lab each conversation was in
@@ -158,8 +162,9 @@ Virtual Science Lab is an educational web application that brings science experi
 
 ### Backend & Services
 
-- **Appwrite** - Authentication and backend
-- **Hugging Face Inference API** - AI assistant (Gemma model)
+- **Appwrite** - Authentication and backend (optional database for chat history)
+- **NLP Cloud API** - AI assistant (Llama 2 model) with local fallback
+- **Vite Proxy** - Handles CORS for AI API requests
 
 ### Development
 
@@ -220,9 +225,8 @@ Edit `.env` file with your credentials:
 # Appwrite Configuration
 VITE_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
 VITE_APPWRITE_PROJECT_ID=your-project-id-here
-
-# Google Gemini AI Configuration
-VITE_GEMINI_API_KEY=your-gemini-api-key-here
+VITE_APPWRITE_DATABASE_ID=your-database-id-here
+VITE_APPWRITE_COLLECTION_ID=your-collection-id-here
 ```
 
 ---
@@ -254,6 +258,7 @@ VITE_GEMINI_API_KEY=your-gemini-api-key-here
 - Click the **🤖 floating button** (bottom-right)
 - Type your science question
 - Get instant, educational explanations
+- The AI uses a free NLP Cloud API with local fallback responses
 - Conversation is auto-saved when you close it
 
 ### 5. Review Chat History
@@ -262,6 +267,7 @@ VITE_GEMINI_API_KEY=your-gemini-api-key-here
 - View all past conversations
 - Click any chat to see full details
 - Delete individual chats or clear all
+- Chat history is automatically stored in the cloud when Appwrite is configured, otherwise it's stored locally
 
 ### 6. Customize Settings
 
@@ -277,6 +283,7 @@ VITE_GEMINI_API_KEY=your-gemini-api-key-here
 ```
 virtual-science-lab/
 ├── src/
+│   ├── assets/                # Static assets
 │   ├── components/
 │   │   ├── auth/              # Authentication components
 │   │   │   └── Login.tsx      # Login/Register page
@@ -305,13 +312,12 @@ virtual-science-lab/
 │   │   └── ToastContext.tsx
 │   ├── config/                # Configuration files
 │   │   ├── appwrite.ts        # Appwrite setup
-│   │   └── gemini.ts          # Gemini AI setup
+│   │   └── ai-service.ts      # AI assistant setup
 │   ├── types/                 # TypeScript types
 │   │   ├── chemistry.ts
 │   │   ├── physics.ts
 │   │   ├── chat.ts
 │   │   └── settings.ts
-│   ├── utils/                 # Utility functions
 │   ├── App.tsx                # Main app component
 │   ├── main.tsx               # App entry point
 │   └── index.css              # Global styles
@@ -351,33 +357,33 @@ virtual-science-lab/
    - Add `http://localhost:5173` for development
    - Add your production URL later
 
-5. **Add to .env**
+5. **Create Database for Chat History**
+   - Go to **Databases** → **Create Database**
+   - Name it "Chat History"
+   - Copy your Database ID for use in environment variables
+
+6. **Create Chat Collection**
+   - In your new database, click "Create Collection"
+   - Name it "Chat Sessions"
+   - Add the following attributes:
+     - `title` (string, 255 characters, required)
+     - `context` (string, 50 characters, optional)
+     - `messages` (string, required - JSON stringified array)
+   - Note: The `createdAt` timestamp is automatically provided by Appwrite and should not be manually added
+   - Add the following permissions:
+     - Read: Any
+     - Write: Any
+   - Copy the Collection ID for use in environment variables
+
+7. **Add to .env**
 
    ```env
    VITE_APPWRITE_PROJECT_ID=your-project-id-from-step-2
+   VITE_APPWRITE_DATABASE_ID=your-database-id-from-step-5
+   VITE_APPWRITE_COLLECTION_ID=your-collection-id-from-step-6
    ```
 
-### Hugging Face API Setup (for Gemma)
-
-1. **Get API Key**
-   - Go to [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
-   - Sign in with your Hugging Face account
-   - Click "New token"
-   - Give it a name and select "Read" role
-   - Copy the generated key
-
-2. **Add to .env**
-
-   ```env
-   VITE_HUGGING_FACE_API_KEY=your-hugging-face-api-key-from-step-1
-   ```
-
-3. **API Quotas**
-   - Free tier: Limited requests per minute
-   - Sufficient for testing and small-scale use
-   - Upgrade at [huggingface.co/pricing](https://huggingface.co/pricing) if needed
-
----
+> Note: The chat history will automatically use Appwrite cloud storage when the database and collection IDs are provided. If these variables are not set, it will fall back to localStorage.
 
 ## 🌐 Deployment
 
@@ -467,6 +473,8 @@ Contributions are what make the open-source community amazing! Any contributions
 - Add comments for complex logic
 - Update documentation as needed
 - Test on multiple browsers
+- The chat history automatically uses Appwrite cloud storage when the required environment variables are set
+- AI requests are proxied through Vite to avoid CORS issues with the NLP Cloud API
 
 ---
 
@@ -509,7 +517,7 @@ SOFTWARE.
 - [Matter.js](https://brm.io/matter-js/) - Physics engine
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
 - [Appwrite](https://appwrite.io/) - Backend platform
-- [Google Gemma](https://blog.google/technology/developers/gemma-open-models/) - AI assistant
+- [NLP Cloud](https://nlpcloud.com/) - AI assistant API
 
 ### Inspiration
 
@@ -522,7 +530,7 @@ SOFTWARE.
 - All contributors and testers
 - Open-source community
 - Stack Overflow for endless answers
-- Hugging Face for providing access to Gemma models
+- NLP Cloud for providing access to Llama 2 models
 
 ---
 

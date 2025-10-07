@@ -16,7 +16,7 @@ interface APIError {
 }
 
 export const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
-    const { saveSession } = useChatHistory();
+    const { saveSession, isCloudStorage } = useChatHistory();
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',

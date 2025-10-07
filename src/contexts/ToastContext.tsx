@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode, useCallback } from 'react';
 import { Toast } from '../components/common/Toast';
 
 interface ToastContextType {
@@ -11,9 +11,9 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 const ToastProviderComponent = ({ children }: { children: ReactNode }) => {
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
-    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+    const showToast = useCallback((message: string, type: 'success' | 'error' | 'info') => {
         setToast({ message, type });
-    };
+    }, []);
 
     return (
         <ToastContext.Provider value={{ showToast }}>
