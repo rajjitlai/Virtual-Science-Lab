@@ -8,13 +8,13 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LoadingScreen } from './components/common/LoadingScreen';
 import { WelcomeTour } from './components/common/WelcomeTour';
 import { Login } from './components/auth/Login';
-import { useState, useEffect } from 'react';
-import { ChemistryLab } from './components/chemistry/ChemistryLab';
-import { PhysicsLab } from './components/physics/PhysicsLab';
-import { AIAssistant } from './components/ai/AIAssistant';
-import { AIButton } from './components/ai/AIButton';
-import { Settings } from './components/settings/Settings';
-import { ChatHistory } from './components/ai/ChatHistory';
+import { useState, useEffect, lazy, Suspense } from 'react';
+const ChemistryLab = lazy(() => import('./components/chemistry/ChemistryLab').then(m => ({ default: m.ChemistryLab })));
+const PhysicsLab = lazy(() => import('./components/physics/PhysicsLab').then(m => ({ default: m.PhysicsLab })));
+const AIAssistant = lazy(() => import('./components/ai/AIAssistant').then(m => ({ default: m.AIAssistant })));
+const AIButton = lazy(() => import('./components/ai/AIButton').then(m => ({ default: m.AIButton })));
+const Settings = lazy(() => import('./components/settings/Settings').then(m => ({ default: m.Settings })));
+const ChatHistory = lazy(() => import('./components/ai/ChatHistory').then(m => ({ default: m.ChatHistory })));
 import type { UserSettings } from './types/settings';
 import { DEFAULT_SETTINGS } from './types/settings';
 
@@ -126,8 +126,8 @@ const Lab = () => {
               setTimeout(() => showToast('Switched to Chemistry Lab', 'info'), 0);
             }}
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'chemistry'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+              ? 'bg-indigo-600 text-white shadow-lg'
+              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
           >
             🧪 Chemistry
@@ -138,31 +138,35 @@ const Lab = () => {
               setTimeout(() => showToast('Switched to Physics Lab', 'info'), 0);
             }}
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'physics'
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+              ? 'bg-indigo-600 text-white shadow-lg'
+              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
           >
             ⚡ Physics
           </button>
         </div>
 
-        {activeTab === 'chemistry' && <ChemistryLab />}
-        {activeTab === 'physics' && <PhysicsLab />}
+        <Suspense fallback={<LoadingScreen />}>
+          {activeTab === 'chemistry' && <ChemistryLab />}
+          {activeTab === 'physics' && <PhysicsLab />}
+        </Suspense>
       </main>
 
-      <AIButton onClick={() => setIsAIOpen(true)} />
-      <AIAssistant
-        isOpen={isAIOpen}
-        onClose={() => setIsAIOpen(false)}
-        context={activeTab}
-      />
-      <Settings 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
-        initialSettings={userSettings}
-        onSaveSettings={saveUserSettings}
-      />
-      <ChatHistory isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
+      <Suspense fallback={null}>
+        <AIButton onClick={() => setIsAIOpen(true)} />
+        <AIAssistant
+          isOpen={isAIOpen}
+          onClose={() => setIsAIOpen(false)}
+          context={activeTab}
+        />
+        <Settings
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          initialSettings={userSettings}
+          onSaveSettings={saveUserSettings}
+        />
+        <ChatHistory isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
+      </Suspense>
 
       {showWelcomeTour && (
         <WelcomeTour onComplete={async () => {

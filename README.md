@@ -81,10 +81,20 @@ src/
    ```
 
 3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
+   Create `.env` with the following keys (or copy from the block below):
+   ```env
+   # Appwrite Configuration
+   VITE_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+   VITE_APPWRITE_PROJECT_ID=
+   VITE_APPWRITE_DATABASE_ID=
+   VITE_APPWRITE_CHAT_COLLECTION_ID=
+   VITE_APPWRITE_MIXTURES_COLLECTION_ID=
+   VITE_APPWRITE_USER_DATA_COLLECTION_ID=
+
+   # OpenRouter API
+   VITE_OPENROUTER_API_KEY=
    ```
-   Edit the [.env](file:///D:/Other/Code/virtual-science-lab/.env) file with your API keys (see [API Keys Setup](#-api-keys-setup))
+   Edit the `.env` file with your API keys (see [API Keys Setup](#-api-keys-setup))
 
 4. **Start the development server**
    ```bash

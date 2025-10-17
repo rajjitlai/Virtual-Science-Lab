@@ -2,16 +2,16 @@
 // API key required for this service
 
 interface OpenRouterResponse {
-  choices: Array<{
-    message: {
-      content: string;
+    choices: Array<{
+        message: {
+            content: string;
+        };
+    }>;
+    usage?: {
+        prompt_tokens: number;
+        completion_tokens: number;
+        total_tokens: number;
     };
-  }>;
-  usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
 }
 
 // Simple rate limiting - track last request time
@@ -26,7 +26,7 @@ export const callGemmaModel = async (prompt: string) => {
     try {
         // Get API key from environment variables
         const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-        
+
         if (!apiKey) {
             throw new Error('OpenRouter API key is not configured. Please set VITE_OPENROUTER_API_KEY in your .env file.');
         }
@@ -43,12 +43,12 @@ export const callGemmaModel = async (prompt: string) => {
 
         // Log the prompt length for debugging
         console.log(`Sending prompt with ${prompt.length} characters`);
-        
+
         // Set a reasonable timeout for the request
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const response = await fetch('/api/openrouter/api/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
@@ -70,7 +70,7 @@ export const callGemmaModel = async (prompt: string) => {
 
         // Log response status for debugging
         console.log(`API response status: ${response.status}`);
-        
+
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`API error response: ${errorText}`);
@@ -79,30 +79,30 @@ export const callGemmaModel = async (prompt: string) => {
 
         const data: OpenRouterResponse = await response.json();
         console.log(`API response usage:`, data.usage);
-        
+
         const content = data.choices[0]?.message?.content || "I'm sorry, I couldn't process your question. Please try again.";
-        
+
         return {
             generated_text: content
         };
     } catch (error: any) {
         console.error("Error calling OpenRouter API:", error);
-        
+
         // Handle timeout specifically
         if (error.name === 'AbortError') {
             throw new Error('The request to OpenRouter API timed out. Please check your network connection and try again.');
         }
-        
+
         // Handle API key errors
         if (error.message && error.message.includes('API key is not configured')) {
             throw new Error('OpenRouter API key is not configured. Please set VITE_OPENROUTER_API_KEY in your .env file.');
         }
-        
+
         // Handle network errors
         if (error instanceof TypeError) {
             throw new Error('Network error when connecting to OpenRouter API. Please check your internet connection and try again.');
         }
-        
+
         // Re-throw other errors
         throw error;
     }

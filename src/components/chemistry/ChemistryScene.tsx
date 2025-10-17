@@ -1,5 +1,6 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
+import { Suspense } from 'react';
 import { Beaker } from './Beaker';
 
 
@@ -12,20 +13,22 @@ interface ChemistrySceneProps {
 export const ChemistryScene = ({ liquidColor, liquidLevel, showBubbles }: ChemistrySceneProps) => {
     return (
         <div className="w-full h-[500px] bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg">
-            <Canvas camera={{ position: [3, 2, 5], fov: 50 }}>
+            <Canvas camera={{ position: [3, 2, 4], fov: 50 }}>
                 <ambientLight intensity={0.5} />
                 <directionalLight position={[5, 5, 5]} intensity={1} />
                 <pointLight position={[-5, 5, -5]} intensity={0.5} />
 
-                <Beaker
-                    position={[0, 0, 0]}
-                    liquidColor={liquidColor}
-                    liquidLevel={liquidLevel}
-                    showBubbles={showBubbles}
-                />
+                <Suspense fallback={null}>
+                    <Beaker
+                        position={[0, 0, 0]}
+                        liquidColor={liquidColor}
+                        liquidLevel={liquidLevel}
+                        showBubbles={showBubbles}
+                    />
+                    <Environment preset="sunset" />
+                </Suspense>
 
-                <OrbitControls enableZoom={true} enablePan={false} />
-                <Environment preset="sunset" />
+                <OrbitControls enableZoom={true} enablePan={true} />
 
                 {/* Ground */}
                 <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
