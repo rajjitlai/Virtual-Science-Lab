@@ -76,17 +76,17 @@ export const Beaker = ({ position, liquidColor, liquidLevel, showBubbles }: Beak
                     color="#ffffff"
                     transparent
                     opacity={1}
-                    roughness={0.01}
+                    roughness={0.0}
                     metalness={0.0}
                     transmission={1}
-                    thickness={0.02}
+                    thickness={0.01}
                     clearcoat={1}
-                    clearcoatRoughness={0.02}
+                    clearcoatRoughness={0.0}
                     ior={1.5}
                     attenuationColor={new THREE.Color('#ffffff')}
                     attenuationDistance={Infinity}
-                    specularIntensity={1}
-                    envMapIntensity={0.2}
+                    specularIntensity={0.5}
+                    envMapIntensity={0.1}
                     side={THREE.FrontSide}
                     depthWrite={false}
                 />
@@ -99,17 +99,17 @@ export const Beaker = ({ position, liquidColor, liquidLevel, showBubbles }: Beak
                     color="#ffffff"
                     transparent
                     opacity={1}
-                    roughness={0.01}
+                    roughness={0.0}
                     metalness={0.0}
                     transmission={1}
-                    thickness={0.06}
+                    thickness={0.03}
                     clearcoat={1}
-                    clearcoatRoughness={0.02}
+                    clearcoatRoughness={0.0}
                     ior={1.5}
                     attenuationColor={new THREE.Color('#ffffff')}
                     attenuationDistance={Infinity}
-                    specularIntensity={1}
-                    envMapIntensity={0.2}
+                    specularIntensity={0.5}
+                    envMapIntensity={0.1}
                     side={THREE.FrontSide}
                     depthWrite={false}
                 />
@@ -117,14 +117,14 @@ export const Beaker = ({ position, liquidColor, liquidLevel, showBubbles }: Beak
 
             {/* Liquid - Visible from all sides */}
             <mesh ref={liquidRef} position={[0, -1.5 + liquidLevel, 0]}>
-                <cylinderGeometry args={[0.945, 0.945, Math.max(liquidLevel * 2, 0.0001), 64]} />
+                <cylinderGeometry args={[0.945, 0.945, Math.max(liquidLevel * 2, 0.0001), 32]} />
                 <meshPhysicalMaterial
                     color={liquidColor}
                     transparent
                     opacity={1}
-                    transmission={0.95}
-                    thickness={Math.max(liquidLevel * 0.12, 0.02)}
-                    roughness={0.05}
+                    transmission={0.8}
+                    thickness={Math.max(liquidLevel * 0.08, 0.01)}
+                    roughness={0.02}
                     metalness={0.0}
                     ior={1.33}
                     clearcoat={0.2}

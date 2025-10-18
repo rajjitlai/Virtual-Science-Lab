@@ -8,6 +8,7 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LoadingScreen } from './components/common/LoadingScreen';
 import { WelcomeTour } from './components/common/WelcomeTour';
 import { Login } from './components/auth/Login';
+import { VerificationPage } from './components/auth/VerificationPage';
 import { useState, useEffect, lazy, Suspense } from 'react';
 const ChemistryLab = lazy(() => import('./components/chemistry/ChemistryLab').then(m => ({ default: m.ChemistryLab })));
 const PhysicsLab = lazy(() => import('./components/physics/PhysicsLab').then(m => ({ default: m.PhysicsLab })));
@@ -26,6 +27,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) return <Navigate to="/login" />;
+
+  return <>{children}</>;
+};
+
+const AuthRedirect = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (user) return <Navigate to="/lab" />;
 
   return <>{children}</>;
 };
@@ -196,7 +209,12 @@ function App() {
               <ToastProvider>
                 <BrowserRouter>
                   <Routes>
-                    <Route path="/login" element={<Login />} />
+                    <Route path="/login" element={
+                      <AuthRedirect>
+                        <Login />
+                      </AuthRedirect>
+                    } />
+                    <Route path="/verify" element={<VerificationPage />} />
                     <Route path="/lab" element={
                       <ProtectedRoute>
                         <Lab />

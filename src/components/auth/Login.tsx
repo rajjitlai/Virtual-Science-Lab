@@ -3,8 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 interface AuthError {
-  message: string;
-  code?: number;
+    message: string;
+    code?: number;
 }
 
 export const Login = () => {
@@ -13,29 +13,37 @@ export const Login = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [name, setName] = useState('');
     const [error, setError] = useState('');
-    const [useMagicURL, setUseMagicURL] = useState(false);
+    const [success, setSuccess] = useState('');
 
-    const { login, register, loginWithMagicURL } = useAuth();
+    const { login, register, sendVerificationEmail, isEmailVerified, user } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setSuccess('');
 
         try {
-            if (useMagicURL) {
-                await loginWithMagicURL(email);
-                alert('Magic link sent! Check your email.');
-            } else if (isLogin) {
+            if (isLogin) {
                 await login(email, password);
                 navigate('/lab');
             } else {
                 await register(email, password, name);
-                navigate('/lab');
+                setSuccess('Account created! Please check your email to verify your account.');
             }
         } catch (err) {
             const authError = err as AuthError;
             setError(authError.message || 'Authentication failed');
+        }
+    };
+
+    const handleSendVerification = async () => {
+        try {
+            await sendVerificationEmail();
+            setSuccess('Verification email sent! Check your inbox.');
+        } catch (err) {
+            const authError = err as AuthError;
+            setError(authError.message || 'Failed to send verification email');
         }
     };
 
@@ -67,40 +75,65 @@ export const Login = () => {
                         required
                     />
 
-                    {!useMagicURL && (
-                        <input
-                            type="password"
-                            placeholder="Password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:text-white"
-                            required
-                        />
-                    )}
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+                        required
+                    />
 
                     {error && <p className="text-red-500 text-sm">{error}</p>}
+                    {success && <p className="text-green-500 text-sm">{success}</p>}
 
                     <button
                         type="submit"
                         className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700"
                     >
-                        {useMagicURL ? 'Send Magic Link' : isLogin ? 'Login' : 'Register'}
+                        {isLogin ? 'Login' : 'Register'}
                     </button>
                 </form>
 
-                <div className="mt-4 text-center space-y-2">
+                {/* Email Verification Status */}
+                {user && !isEmailVerified && (
+                    <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                        <div className="flex items-center mb-2">
+                            <span className="text-yellow-600 dark:text-yellow-400 text-lg mr-2">⚠️</span>
+                            <p className="text-yellow-800 dark:text-yellow-200 font-semibold">
+                                Email Not Verified
+                            </p>
+                        </div>
+                        <p className="text-yellow-700 dark:text-yellow-300 text-sm mb-3">
+                            Please verify your email address to access all features.
+                        </p>
+                        <button
+                            onClick={handleSendVerification}
+                            className="w-full bg-yellow-600 text-white py-2 rounded-lg hover:bg-yellow-700 text-sm"
+                        >
+                            Send Verification Email
+                        </button>
+                    </div>
+                )}
+
+                {/* Email Verification Success */}
+                {user && isEmailVerified && (
+                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg">
+                        <div className="flex items-center">
+                            <span className="text-green-600 dark:text-green-400 text-lg mr-2">✅</span>
+                            <p className="text-green-800 dark:text-green-200 font-semibold">
+                                Email Verified
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                <div className="mt-4 text-center">
                     <button
                         onClick={() => setIsLogin(!isLogin)}
                         className="text-indigo-600 dark:text-indigo-400 text-sm"
                     >
                         {isLogin ? 'Need an account? Register' : 'Have an account? Login'}
-                    </button>
-
-                    <button
-                        onClick={() => setUseMagicURL(!useMagicURL)}
-                        className="block w-full text-gray-600 dark:text-gray-400 text-sm"
-                    >
-                        {useMagicURL ? 'Use password instead' : 'Use magic link instead'}
                     </button>
                 </div>
             </div>

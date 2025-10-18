@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import Matter from 'matter-js';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Physics, useBox, useSphere, usePlane } from '@react-three/cannon';
+import { OrbitControls, Environment } from '@react-three/drei';
+import * as THREE from 'three';
 import { PHYSICS_OBJECTS } from '../../types/physics';
 import type { PhysicsObject } from '../../types/physics';
 
@@ -8,145 +11,109 @@ interface PhysicsEngineProps {
     onStatsUpdate: (stats: { objects: number; kinetic: number }) => void;
 }
 
+// 3D Physics Objects
+const PhysicsBall = ({ position, color, size, mass, restitution }: { position: [number, number, number], color: string, size: number, mass: number, restitution: number }) => {
+    const [ref, api] = useSphere(() => ({
+        mass,
+        position,
+        args: [size],
+        material: { restitution },
+    }));
+
+    return (
+        <mesh ref={ref} castShadow>
+            <sphereGeometry args={[size, 16, 16]} />
+            <meshStandardMaterial color={color} />
+        </mesh>
+    );
+};
+
+const PhysicsBox = ({ position, color, size, mass, restitution }: { position: [number, number, number], color: string, size: number, mass: number, restitution: number }) => {
+    const [ref, api] = useBox(() => ({
+        mass,
+        position,
+        args: [size, size, size],
+        material: { restitution },
+    }));
+
+    return (
+        <mesh ref={ref} castShadow>
+            <boxGeometry args={[size, size, size]} />
+            <meshStandardMaterial color={color} />
+        </mesh>
+    );
+};
+
+const Ground = () => {
+    const [ref] = usePlane(() => ({
+        rotation: [-Math.PI / 2, 0, 0],
+        position: [0, -2, 0],
+        type: 'Static',
+    }));
+
+    return (
+        <mesh ref={ref} receiveShadow>
+            <planeGeometry args={[20, 20]} />
+            <meshStandardMaterial color="#e8e8e8" />
+        </mesh>
+    );
+};
+
+const Platform = ({ position, size }: { position: [number, number, number], size: [number, number, number] }) => {
+    const [ref] = useBox(() => ({
+        position,
+        args: size,
+        type: 'Static',
+    }));
+
+    return (
+        <mesh ref={ref} receiveShadow>
+            <boxGeometry args={size} />
+            <meshStandardMaterial color="#6c5ce7" />
+        </mesh>
+    );
+};
+
 export const PhysicsEngine = ({ gravity, onStatsUpdate }: PhysicsEngineProps) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const engineRef = useRef<Matter.Engine | null>(null);
-    const renderRef = useRef<Matter.Render | null>(null);
+    const [objects, setObjects] = useState<Array<PhysicsObject & { id: string, position: [number, number, number] }>>([]);
     const [isRunning, setIsRunning] = useState(true);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     useEffect(() => {
-        if (!canvasRef.current) return;
-
-        // Create engine
-        const engine = Matter.Engine.create();
-        engineRef.current = engine;
-        engine.gravity.y = gravity;
-
-        // Create renderer
-        const render = Matter.Render.create({
-            canvas: canvasRef.current,
-            engine: engine,
-            options: {
-                width: 800,
-                height: 600,
-                wireframes: false,
-                background: '#1a1a2e',
-            },
-        });
-        renderRef.current = render;
-
-        // Create ground
-        const ground = Matter.Bodies.rectangle(400, 590, 810, 20, {
-            isStatic: true,
-            render: { fillStyle: '#e8e8e8' },
-        });
-
-        // Create walls
-        const leftWall = Matter.Bodies.rectangle(0, 300, 20, 600, {
-            isStatic: true,
-            render: { fillStyle: '#e8e8e8' },
-        });
-
-        const rightWall = Matter.Bodies.rectangle(800, 300, 20, 600, {
-            isStatic: true,
-            render: { fillStyle: '#e8e8e8' },
-        });
-
-        // Create ceiling
-        const ceiling = Matter.Bodies.rectangle(400, 0, 810, 20, {
-            isStatic: true,
-            render: { fillStyle: '#e8e8e8' },
-        });
-
-        // Add static platforms
-        const platform1 = Matter.Bodies.rectangle(200, 400, 150, 15, {
-            isStatic: true,
-            render: { fillStyle: '#6c5ce7' },
-        });
-
-        const platform2 = Matter.Bodies.rectangle(600, 300, 150, 15, {
-            isStatic: true,
-            render: { fillStyle: '#6c5ce7' },
-        });
-
-        // Add all bodies to the world
-        Matter.Composite.add(engine.world, [ground, leftWall, rightWall, ceiling, platform1, platform2]);
-
-        // Run the engine and renderer
-        Matter.Render.run(render);
-        const runner = Matter.Runner.create();
-        Matter.Runner.run(runner, engine);
-
-        // Update stats
-        const updateStats = () => {
-            const bodies = Matter.Composite.allBodies(engine.world).filter(b => !b.isStatic);
-            const kineticEnergy = bodies.reduce((sum, body) => {
-                const velocity = Matter.Body.getVelocity(body);
-                const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
-                return sum + 0.5 * body.mass * speed * speed;
-            }, 0);
-
-            onStatsUpdate({
-                objects: bodies.length,
-                kinetic: Math.round(kineticEnergy * 100) / 100,
-            });
+        // Add initial ball
+        const initialBall: PhysicsObject & { id: string, position: [number, number, number] } = {
+            id: 'initial-ball',
+            type: 'ball',
+            color: '#ff6b6b',
+            size: 1, // Radius for 3D sphere
+            mass: 1,
+            restitution: 0.7,
+            position: [0, 5, 0]
         };
-
-        const statsInterval = setInterval(updateStats, 100);
-
-        // Cleanup
-        return () => {
-            clearInterval(statsInterval);
-            Matter.Render.stop(render);
-            Matter.Runner.stop(runner);
-            Matter.World.clear(engine.world, false);
-            Matter.Engine.clear(engine);
-            render.canvas.remove();
-        };
-    }, [gravity, onStatsUpdate]);
-
-    // Update gravity when it changes
-    useEffect(() => {
-        if (engineRef.current) {
-            engineRef.current.gravity.y = gravity;
-        }
-    }, [gravity]);
+        setObjects([initialBall]);
+        setIsInitialized(true);
+    }, []);
 
     const addObject = (obj: PhysicsObject) => {
-        if (!engineRef.current) return;
-
-        const x = 400 + (Math.random() - 0.5) * 200;
-        const y = 100;
-
-        let body;
-        if (obj.type === 'ball') {
-            body = Matter.Bodies.circle(x, y, obj.size / 2, {
-                restitution: obj.restitution || 0.7,
-                friction: 0.05,
-                mass: obj.mass || 1,
-                render: { fillStyle: obj.color },
-            });
-        } else {
-            body = Matter.Bodies.rectangle(x, y, obj.size, obj.size, {
-                restitution: obj.restitution || 0.3,
-                friction: 0.1,
-                mass: obj.mass || 1,
-                render: { fillStyle: obj.color },
-            });
-        }
-
-        Matter.Composite.add(engineRef.current.world, body);
+        const newObj = {
+            ...obj,
+            id: `${obj.type}-${Date.now()}`,
+            size: obj.size / 40, // Convert from 2D size to 3D radius
+            position: [
+                (Math.random() - 0.5) * 4,
+                5 + Math.random() * 2,
+                (Math.random() - 0.5) * 4
+            ] as [number, number, number]
+        };
+        setObjects(prev => [...prev, newObj]);
+        console.log(`Added ${obj.type} with color ${obj.color} and size ${newObj.size}`);
     };
 
     const clearObjects = () => {
-        if (!engineRef.current) return;
-        const bodies = Matter.Composite.allBodies(engineRef.current.world).filter(b => !b.isStatic);
-        Matter.Composite.remove(engineRef.current.world, bodies);
+        setObjects([]);
     };
 
     const togglePause = () => {
-        if (!engineRef.current) return;
-        engineRef.current.timing.timeScale = isRunning ? 0 : 1;
         setIsRunning(!isRunning);
     };
 
@@ -155,23 +122,95 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate }: PhysicsEngineProps) =>
             <div className="flex gap-4 justify-center">
                 <button
                     onClick={togglePause}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold"
+                    disabled={!isInitialized}
+                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold"
                 >
                     {isRunning ? '⏸️ Pause' : '▶️ Play'}
                 </button>
                 <button
                     onClick={clearObjects}
-                    className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold"
+                    disabled={!isInitialized}
+                    className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold"
                 >
                     🗑️ Clear All
                 </button>
             </div>
 
             <div className="flex justify-center">
-                <canvas
-                    ref={canvasRef}
-                    className="border-4 border-gray-300 dark:border-gray-700 rounded-lg shadow-2xl"
-                />
+                <div className="relative w-full h-[600px] bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg">
+                    {!isInitialized ? (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                                <p className="text-lg font-semibold text-gray-800 dark:text-white">Loading Physics Engine...</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <Canvas camera={{ position: [8, 8, 8], fov: 50 }} shadows>
+                            <ambientLight intensity={0.6} />
+                            <directionalLight
+                                position={[10, 10, 5]}
+                                intensity={1}
+                                castShadow
+                                shadow-mapSize={[2048, 2048]}
+                                shadow-camera-far={50}
+                                shadow-camera-left={-10}
+                                shadow-camera-right={10}
+                                shadow-camera-top={10}
+                                shadow-camera-bottom={-10}
+                            />
+                            <pointLight position={[-10, 10, -10]} intensity={0.3} />
+
+                            <Physics
+                                gravity={[0, -gravity * 9.81, 0]}
+                                paused={!isRunning}
+                                defaultContactMaterial={{ restitution: 0.3 }}
+                            >
+                                <Ground />
+                                <Platform position={[-3, 0, 0]} size={[2, 0.5, 2]} />
+                                <Platform position={[3, 1, 0]} size={[2, 0.5, 2]} />
+
+                                {objects.map((obj) => (
+                                    obj.type === 'ball' ? (
+                                        <PhysicsBall
+                                            key={obj.id}
+                                            position={obj.position}
+                                            color={obj.color}
+                                            size={obj.size}
+                                            mass={obj.mass || 1}
+                                            restitution={obj.restitution || 0.7}
+                                        />
+                                    ) : (
+                                        <PhysicsBox
+                                            key={obj.id}
+                                            position={obj.position}
+                                            color={obj.color}
+                                            size={obj.size}
+                                            mass={obj.mass || 1}
+                                            restitution={obj.restitution || 0.3}
+                                        />
+                                    )
+                                ))}
+                            </Physics>
+
+                            <OrbitControls
+                                enableZoom={true}
+                                enablePan={true}
+                                minDistance={5}
+                                maxDistance={20}
+                            />
+                            <Environment preset="sunset" />
+                        </Canvas>
+                    )}
+
+                    {isInitialized && !isRunning && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+                            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                                <p className="text-lg font-semibold text-gray-800 dark:text-white">Simulation Paused</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -179,7 +218,8 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate }: PhysicsEngineProps) =>
                     <button
                         key={obj.id}
                         onClick={() => addObject(obj)}
-                        className="p-4 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 hover:shadow-lg transition-all"
+                        disabled={!isInitialized}
+                        className="p-4 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <div className="flex flex-col items-center gap-2">
                             <div
