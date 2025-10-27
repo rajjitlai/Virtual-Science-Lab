@@ -10,6 +10,7 @@ export interface ChatSession {
     messages: Message[];
     title: string;
     createdAt: Date;
+    context?: string;
 }
 
 // Appwrite document type (for reference)

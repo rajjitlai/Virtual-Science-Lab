@@ -17,6 +17,7 @@ const AIButton = lazy(() => import('./components/ai/AIButton').then(m => ({ defa
 const Settings = lazy(() => import('./components/settings/Settings').then(m => ({ default: m.Settings })));
 const ChatHistory = lazy(() => import('./components/ai/ChatHistory').then(m => ({ default: m.ChatHistory })));
 import type { UserSettings } from './types/settings';
+import type { ChatSession } from './types/chat';
 import { DEFAULT_SETTINGS } from './types/settings';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -51,6 +52,8 @@ const Lab = () => {
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [continuedChat, setContinuedChat] = useState<{ messages: any[]; context?: 'chemistry' | 'physics' } | null>(null);
+  const [isContinuingChat, setIsContinuingChat] = useState(false);
   const [showWelcomeTour, setShowWelcomeTour] = useState(false);
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
@@ -169,8 +172,17 @@ const Lab = () => {
         <AIButton onClick={() => setIsAIOpen(true)} />
         <AIAssistant
           isOpen={isAIOpen}
-          onClose={() => setIsAIOpen(false)}
-          context={activeTab}
+          onClose={() => {
+            setIsAIOpen(false);
+            // Reset continued chat state after a delay to allow close animation
+            setTimeout(() => {
+              setContinuedChat(null);
+              setIsContinuingChat(false);
+            }, 300);
+          }}
+          context={continuedChat?.context || activeTab}
+          initialMessages={continuedChat?.messages || []}
+          isContinuedChat={isContinuingChat}
         />
         <Settings
           isOpen={isSettingsOpen}
@@ -178,7 +190,15 @@ const Lab = () => {
           initialSettings={userSettings}
           onSaveSettings={saveUserSettings}
         />
-        <ChatHistory isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
+        <ChatHistory 
+          isOpen={isHistoryOpen} 
+          onClose={() => setIsHistoryOpen(false)}
+          onContinueChat={(session: ChatSession) => {
+            setContinuedChat({ messages: session.messages, context: (session.context as 'chemistry' | 'physics') || activeTab });
+            setIsContinuingChat(true);
+            setIsAIOpen(true);
+          }}
+        />
       </Suspense>
 
       {showWelcomeTour && (

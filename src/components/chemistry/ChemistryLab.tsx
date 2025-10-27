@@ -52,7 +52,7 @@ export const ChemistryLab = () => {
 
         // Check for reactions
         checkReaction(newSelection);
-        
+
         // Play sound effect
         playBeep(440, 0.1);
     };
@@ -61,7 +61,7 @@ export const ChemistryLab = () => {
         if (!customChemicalName.trim()) return;
 
         setIsAIProcessing(true);
-        
+
         try {
             // Ask AI to determine properties for the custom chemical
             const prompt = `Based on the name "${customChemicalName}", provide the following information in JSON format:
@@ -79,7 +79,7 @@ Respond ONLY with JSON in this format:
 }`;
 
             const result = await callGemmaModel(prompt);
-            
+
             let aiResponse;
             try {
                 // Try to parse AI response as JSON
@@ -97,7 +97,7 @@ Respond ONLY with JSON in this format:
 
             // Generate a unique ID for the custom chemical
             const customId = `custom-${Date.now()}`;
-            
+
             const customChemical: Chemical = {
                 id: customId,
                 name: customChemicalName,
@@ -113,15 +113,15 @@ Respond ONLY with JSON in this format:
             // Clear the input fields
             setCustomChemicalName('');
             setCustomChemicalFormula('');
-            
+
             // Show success message
             showToast(`Added custom chemical: ${customChemicalName}`, 'success');
         } catch (error) {
             console.error('Error processing custom chemical with AI:', error);
-            
+
             // Fallback: create with default properties
             const customId = `custom-${Date.now()}`;
-            
+
             const customChemical: Chemical = {
                 id: customId,
                 name: customChemicalName,
@@ -136,7 +136,7 @@ Respond ONLY with JSON in this format:
             // Clear the input fields
             setCustomChemicalName('');
             setCustomChemicalFormula('');
-            
+
             // Show error message
             showToast('Error processing custom chemical. Using default properties.', 'error');
         } finally {
@@ -148,7 +148,7 @@ Respond ONLY with JSON in this format:
         if (selectedChemicals.length === 0) return;
 
         const mixtureName = selectedChemicals.map(c => c.name).join(' + ');
-        const mixtureColor = selectedChemicals.length > 1 
+        const mixtureColor = selectedChemicals.length > 1
             ? mixColors(selectedChemicals[0].color, selectedChemicals[selectedChemicals.length - 1].color)
             : selectedChemicals[0].color;
 
@@ -163,11 +163,11 @@ Respond ONLY with JSON in this format:
         try {
             // Save mixture using Appwrite
             await saveMixture(newMixture);
-            
-            // Update local state
-            const updatedMixtures = [newMixture, ...recentMixtures].slice(0, 10); // Keep only last 10
+
+            // Reload mixtures from Appwrite to get the latest data
+            const updatedMixtures = await loadMixtures();
             setRecentMixtures(updatedMixtures);
-            
+
             // Play sound and show message
             playBeep(523, 0.2); // Higher pitch for success
             showToast(`Saved mixture: ${mixtureName}`, 'success');
@@ -179,16 +179,16 @@ Respond ONLY with JSON in this format:
 
     const handleLoadMixture = (mixture: Mixture) => {
         setSelectedChemicals(mixture.chemicals);
-        
+
         // Set liquid properties based on mixture
         if (mixture.chemicals.length > 0) {
             setLiquidColor(mixture.color);
             setLiquidLevel(Math.min(0.5 + (mixture.chemicals.length * 0.3), 1.4));
         }
-        
+
         // Show a message
         setReactionMessage(`Loaded mixture: ${mixture.name}`);
-        
+
         // Play sound
         playBeep(392, 0.15);
         showToast(`Loaded mixture: ${mixture.name}`, 'info');
@@ -241,7 +241,7 @@ Respond ONLY with JSON in this format:
         setLiquidLevel(0.5);
         setShowBubbles(false);
         setReactionMessage('');
-        
+
         // Play reset sound
         playResetSound();
         showToast('Beaker reset', 'info');

@@ -5,9 +5,10 @@ import type { ChatSession } from '../../types/chat';
 interface ChatHistoryProps {
     isOpen: boolean;
     onClose: () => void;
+    onContinueChat?: (session: ChatSession) => void; // Add this prop
 }
 
-export const ChatHistory = ({ isOpen, onClose }: ChatHistoryProps) => {
+export const ChatHistory = ({ isOpen, onClose, onContinueChat }: ChatHistoryProps) => {
     const { sessions, deleteSession, clearAllSessions, isCloudStorage } = useChatHistory();
     const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -34,6 +35,14 @@ export const ChatHistory = ({ isOpen, onClose }: ChatHistoryProps) => {
         clearAllSessions();
         setSelectedSession(null);
         setShowDeleteConfirm(false);
+    };
+
+    // Add this function to handle continuing a chat
+    const handleContinueChat = (session: ChatSession) => {
+        if (onContinueChat) {
+            onContinueChat(session);
+        }
+        onClose();
     };
 
     if (!isOpen) return null;
@@ -125,6 +134,14 @@ export const ChatHistory = ({ isOpen, onClose }: ChatHistoryProps) => {
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
                                     {selectedSession.createdAt.toLocaleString()} • {selectedSession.messages.length} messages
                                 </p>
+                                <div className="flex gap-2 mt-2">
+                                    <button
+                                        onClick={() => handleContinueChat(selectedSession)}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-3 py-1 rounded-lg"
+                                    >
+                                        Continue Chat
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-6 space-y-4">

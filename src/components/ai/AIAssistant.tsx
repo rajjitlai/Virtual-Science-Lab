@@ -7,27 +7,35 @@ interface AIAssistantProps {
     isOpen: boolean;
     onClose: () => void;
     context?: 'chemistry' | 'physics';
+    initialMessages?: Message[];
+    isContinuedChat?: boolean;
 }
 
 interface APIError {
-  message: string;
-  name?: string;
-  stack?: string;
+    message: string;
+    name?: string;
+    stack?: string;
 }
 
-export const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
+export const AIAssistant = ({ isOpen, onClose, context, initialMessages, isContinuedChat }: AIAssistantProps) => {
     const { saveSession, isCloudStorage } = useChatHistory();
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: '1',
-            role: 'assistant',
-            content: `Hi! 👋 I'm your AI Lab Assistant. I'm here to help you understand ${context || 'science'} experiments! Ask me anything about chemical reactions, physics concepts, or how things work. What would you like to learn today?`,
-            timestamp: new Date(),
-        },
-    ]);
+    const [messages, setMessages] = useState<Message[]>(initialMessages && initialMessages.length > 0 
+        ? initialMessages 
+        : (isContinuedChat 
+            ? [] 
+            : [
+                {
+                    id: '1',
+                    role: 'assistant',
+                    content: `Hi! 👋 I'm your AI Lab Assistant. I'm here to help you understand ${context || 'science'} experiments! Ask me anything about chemical reactions, physics concepts, or how things work. What would you like to learn today?`,
+                    timestamp: new Date(),
+                },
+            ])
+    );
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const hasBeenSaved = useRef<boolean>(false);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -37,10 +45,39 @@ export const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
         scrollToBottom();
     }, [messages]);
 
-    const handleClose = () => {
-        // Save session before closing if there are user messages
-        if (messages.some(m => m.role === 'user')) {
-            saveSession(messages, context);
+    useEffect(() => {
+        if (isOpen) {
+            if (isContinuedChat && initialMessages && initialMessages.length > 0) {
+                setMessages(initialMessages);
+            } else {
+                // New chat
+                setMessages([
+                    {
+                        id: '1',
+                        role: 'assistant',
+                        content: `Hi! 👋 I'm your AI Lab Assistant. I'm here to help you understand ${context || 'science'} experiments! Ask me anything about chemical reactions, physics concepts, or how things work. What would you like to learn today?`,
+                        timestamp: new Date(),
+                    },
+                ]);
+            }
+        } else {
+            // Reset after a delay to allow close animation
+            setTimeout(() => {
+                setMessages([]);
+                hasBeenSaved.current = false;
+            }, 300);
+        }
+    }, [isOpen, context, initialMessages, isContinuedChat]);
+
+    const handleClose = async () => {
+        // Save session before closing if there are user messages and not already saved
+        if (messages.some(m => m.role === 'user') && !hasBeenSaved.current) {
+            try {
+                await saveSession(messages, context);
+                hasBeenSaved.current = true;
+            } catch (error) {
+                console.error('Failed to save chat session:', error);
+            }
         }
         onClose();
     };
@@ -60,17 +97,17 @@ export const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
         setIsLoading(true);
 
         try {
-                // Limit conversation history to last 6 messages to prevent context overflow
-                const recentMessages = messages.slice(-6);
-                const conversationHistory = recentMessages
-                    .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
-                    .join('\n');
+            // Limit conversation history to last 6 messages to prevent context overflow
+            const recentMessages = messages.slice(-6);
+            const conversationHistory = recentMessages
+                .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+                .join('\n');
 
-                const contextPrompt = context
-                    ? `Current lab: ${context}. User is working with ${context === 'chemistry' ? 'chemical reactions and mixtures' : 'physics simulations and gravity'}.`
-                    : '';
+            const contextPrompt = context
+                ? `Current lab: ${context}. User is working with ${context === 'chemistry' ? 'chemical reactions and mixtures' : 'physics simulations and gravity'}.`
+                : '';
 
-                const fullPrompt = `${SYSTEM_PROMPT}
+            const fullPrompt = `${SYSTEM_PROMPT}
 
 ${contextPrompt}
 
@@ -79,50 +116,50 @@ ${conversationHistory}
 
 User: ${input}
 
-Assistant:`;
+Assistant:`
 
-                const result = await callGemmaModel(fullPrompt);
-                
-                // Extract the generated text from the response
-                let response = '';
-                if (result.generated_text) {
-                    response = result.generated_text.trim();
-                } else {
-                    response = 'Sorry, I encountered an issue processing your request.';
-                }
+            const result = await callGemmaModel(fullPrompt);
 
-                const assistantMessage: Message = {
-                    id: (Date.now() + 1).toString(),
-                    role: 'assistant',
-                    content: response,
-                    timestamp: new Date(),
-                };
+            // Extract the generated text from the response
+            let response = '';
+            if (result.generated_text) {
+                response = result.generated_text.trim();
+            } else {
+                response = 'Sorry, I encountered an issue processing your request.';
+            }
 
-                setMessages((prev) => [...prev, assistantMessage]);
-            } catch (error) {
-                const apiError = error as APIError;
-                console.error('Error with AI response:', apiError);
+            const assistantMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: response,
+                timestamp: new Date(),
+            };
 
-                let errorMessage = 'Sorry, I encountered an error. ';
-                
-                if (apiError.message.includes('API key is not configured')) {
-                    errorMessage += 'Please make sure you have set your OpenRouter API key in the VITE_OPENROUTER_API_KEY environment variable.';
-                } else if (apiError.message.includes('Invalid Google Gemini API key')) {
-                    errorMessage += 'Your API key seems to be invalid. Please check your VITE_OPENROUTER_API_KEY in the .env file.';
-                } else if (apiError.message.includes('timed out')) {
-                    errorMessage += 'The request timed out. This might be due to a slow network connection or high demand on the API. Please try again.';
-                } else if (apiError.message.includes('Network error')) {
-                    errorMessage += 'There seems to be a network connectivity issue. Please check your internet connection and try again.';
-                } else {
-                    errorMessage += 'Please try again. If the problem persists, check that your API key is valid and your network connection is stable.';
-                }
+            setMessages((prev) => [...prev, assistantMessage]);
+        } catch (error) {
+            const apiError = error as APIError;
+            console.error('Error with AI response:', apiError);
 
-                const errorMessageObj: Message = {
-                    id: (Date.now() + 1).toString(),
-                    role: 'assistant',
-                    content: errorMessage,
-                    timestamp: new Date(),
-                };
+            let errorMessage = 'Sorry, I encountered an error. ';
+
+            if (apiError.message.includes('API key is not configured')) {
+                errorMessage += 'Please make sure you have set your OpenRouter API key in the VITE_OPENROUTER_API_KEY environment variable.';
+            } else if (apiError.message.includes('Invalid Google Gemini API key')) {
+                errorMessage += 'Your API key seems to be invalid. Please check your VITE_OPENROUTER_API_KEY in the .env file.';
+            } else if (apiError.message.includes('timed out')) {
+                errorMessage += 'The request timed out. This might be due to a slow network connection or high demand on the API. Please try again.';
+            } else if (apiError.message.includes('Network error')) {
+                errorMessage += 'There seems to be a network connectivity issue. Please check your internet connection and try again.';
+            } else {
+                errorMessage += 'Please try again. If the problem persists, check that your API key is valid and your network connection is stable.';
+            }
+
+            const errorMessageObj: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: errorMessage,
+                timestamp: new Date(),
+            };
 
             setMessages((prev) => [...prev, errorMessageObj]);
         } finally {
@@ -143,7 +180,7 @@ Assistant:`;
         const lines = content.split('\n');
         const elements: React.ReactNode[] = [];
         let key = 0;
-        
+
         // Process inline formatting for a line
         const processInlineFormatting = (line: string) => {
             return line
@@ -155,22 +192,22 @@ Assistant:`;
                 .replace(/~~(.*?)~~/g, '<del>$1</del>') // Strikethrough
                 .replace(/`([^`]+)`/g, '<code>$1</code>'); // Inline code
         };
-        
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            
+
             // Check for code blocks (```)
             if (line.startsWith('```')) {
                 const lang = line.substring(3).trim();
                 const codeLines = [];
                 let j = i + 1;
-                
+
                 // Collect all lines until closing ```
                 while (j < lines.length && !lines[j].startsWith('```')) {
                     codeLines.push(lines[j]);
                     j++;
                 }
-                
+
                 elements.push(
                     <pre key={key++} className="markdown-code-block">
                         <code>{codeLines.join('\n')}</code>
@@ -182,13 +219,13 @@ Assistant:`;
             else if (line.startsWith('> ')) {
                 const quoteLines = [];
                 let j = i;
-                
+
                 // Collect all consecutive blockquote lines
                 while (j < lines.length && lines[j].startsWith('> ')) {
                     quoteLines.push(lines[j].substring(2));
                     j++;
                 }
-                
+
                 elements.push(
                     <blockquote key={key++}>
                         {quoteLines.map((quoteLine, idx) => (
@@ -219,7 +256,7 @@ Assistant:`;
                 const listItems = [];
                 let j = i;
                 let itemNumber = 1;
-                
+
                 // Collect all consecutive ordered list items
                 while (j < lines.length && /^\d+\.\s/.test(lines[j].trim())) {
                     // Extract the actual content after the number
@@ -228,7 +265,7 @@ Assistant:`;
                     j++;
                     itemNumber++;
                 }
-                
+
                 elements.push(<ol key={key++}>{listItems}</ol>);
                 i = j - 1; // Adjust index
             }
@@ -236,15 +273,16 @@ Assistant:`;
             else if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
                 const listItems = [];
                 let j = i;
-                
+
                 // Collect all consecutive list items
-                while (j < lines.length && 
-                       (lines[j].trim().startsWith('* ') || lines[j].trim().startsWith('- '))) {
+                while (j < lines.length &&
+                    (lines[j].trim().startsWith('* ') || lines[j].trim().startsWith('- ')))
+                {
                     const listItemContent = lines[j].trim().substring(2);
                     listItems.push(<li key={key++} dangerouslySetInnerHTML={{ __html: processInlineFormatting(listItemContent) }} />);
                     j++;
                 }
-                
+
                 elements.push(<ul key={key++}>{listItems}</ul>);
                 i = j - 1; // Adjust index
             }
@@ -261,7 +299,7 @@ Assistant:`;
                 elements.push(<div key={key++}>&nbsp;</div>);
             }
         }
-        
+
         return elements;
     };
 
@@ -310,8 +348,8 @@ Assistant:`;
                         >
                             <div
                                 className={`max-w-[80%] rounded-2xl p-4 ${message.role === 'user'
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'}
                                     }`}
                             >
                                 <div className="markdown-content">

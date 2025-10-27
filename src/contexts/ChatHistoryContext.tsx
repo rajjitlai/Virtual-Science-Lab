@@ -64,9 +64,13 @@ const ChatHistoryProviderComponent = ({ children }: { children: ReactNode }) => 
 
             const sessionsWithDates = response.documents.map((doc: any) => ({
                 id: doc.$id,
-                messages: JSON.parse(doc.messages),
+                messages: JSON.parse(doc.messages).map((msg: any) => ({
+                    ...msg,
+                    timestamp: new Date(msg.timestamp)
+                })),
                 title: doc.title,
                 createdAt: new Date(doc.$createdAt),
+                context: doc.context || undefined,
             }));
 
             setSessions(sessionsWithDates);
