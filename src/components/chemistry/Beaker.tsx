@@ -1,15 +1,17 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { Fire } from './Fire';
 
 interface BeakerProps {
     position: [number, number, number];
     liquidColor: string;
     liquidLevel: number;
     showBubbles?: boolean;
+    fireIntensity?: number;
 }
 
-export const Beaker = ({ position, liquidColor, liquidLevel, showBubbles }: BeakerProps) => {
+export const Beaker = ({ position, liquidColor, liquidLevel, showBubbles, fireIntensity = 0 }: BeakerProps) => {
     const liquidRef = useRef<THREE.Mesh>(null);
     const bubblesRef = useRef<THREE.Group>(null);
     const wrapperRef = useRef<THREE.Mesh>(null);
@@ -17,11 +19,14 @@ export const Beaker = ({ position, liquidColor, liquidLevel, showBubbles }: Beak
     const glassBottomRef = useRef<THREE.Mesh>(null);
 
     useFrame(() => {
-        if (showBubbles && bubblesRef.current) {
+        // Animate bubbles safely
+        if (showBubbles && bubblesRef.current && bubblesRef.current.children) {
             bubblesRef.current.children.forEach((bubble) => {
-                bubble.position.y += 0.02;
-                if (bubble.position.y > 2) {
-                    bubble.position.y = 0.5;
+                if (bubble && bubble.position) {
+                    bubble.position.y += 0.02;
+                    if (bubble.position.y > 2) {
+                        bubble.position.y = 0.5;
+                    }
                 }
             });
         }
@@ -49,88 +54,41 @@ export const Beaker = ({ position, liquidColor, liquidLevel, showBubbles }: Beak
 
     return (
         <group position={position}>
-            {/* Wrapper - Visual indicator of beaker state */}
-            <mesh ref={wrapperRef}>
-                <cylinderGeometry args={[1.03, 1.03, 3.05, 32]} />
-                <meshPhysicalMaterial
-                    color={wrapperColor}
+            {/* Backdrop Screen */}
+            <mesh position={[0, 0, -2]}>
+                <planeGeometry args={[4, 3]} />
+                <meshStandardMaterial
+                    color="#f8fafc"
                     transparent
-                    opacity={wrapperOpacity}
-                    roughness={0.1}
-                    metalness={0.0}
-                    transmission={0.0}
-                    thickness={0.0}
-                    clearcoat={0.3}
-                    clearcoatRoughness={0.3}
-                    ior={1.4}
-                    specularIntensity={0.3}
-                    emissive="#000000"
-                    emissiveIntensity={0}
+                    opacity={0.8}
                 />
             </mesh>
 
-            {/* Glass Beaker - physical glass with transmission and proper depth settings */}
+            {/* Screen Frame */}
+            <mesh position={[0, 0, -2.01]}>
+                <planeGeometry args={[4.2, 3.2]} />
+                <meshStandardMaterial color="#374151" />
+            </mesh>
+
+            {/* Simple beaker */}
             <mesh ref={glassRef}>
-                <cylinderGeometry args={[1, 1, 3, 64, 1, true]} />
-                <meshPhysicalMaterial
+                <cylinderGeometry args={[1, 1, 3, 16, 1, true]} />
+                <meshStandardMaterial
                     color="#ffffff"
                     transparent
-                    opacity={1}
-                    roughness={0.0}
-                    metalness={0.0}
-                    transmission={1}
-                    thickness={0.01}
-                    clearcoat={1}
-                    clearcoatRoughness={0.0}
-                    ior={1.5}
-                    attenuationColor={new THREE.Color('#ffffff')}
-                    attenuationDistance={Infinity}
-                    specularIntensity={0.5}
-                    envMapIntensity={0.1}
-                    side={THREE.FrontSide}
-                    depthWrite={false}
+                    opacity={0.3}
+                    side={THREE.DoubleSide}
                 />
             </mesh>
 
-            {/* Glass bottom so empty beaker is clearly visible */}
-            <mesh ref={glassBottomRef} position={[0, -1.48, 0]}>
-                <cylinderGeometry args={[0.98, 0.98, 0.06, 64]} />
-                <meshPhysicalMaterial
-                    color="#ffffff"
-                    transparent
-                    opacity={1}
-                    roughness={0.0}
-                    metalness={0.0}
-                    transmission={1}
-                    thickness={0.03}
-                    clearcoat={1}
-                    clearcoatRoughness={0.0}
-                    ior={1.5}
-                    attenuationColor={new THREE.Color('#ffffff')}
-                    attenuationDistance={Infinity}
-                    specularIntensity={0.5}
-                    envMapIntensity={0.1}
-                    side={THREE.FrontSide}
-                    depthWrite={false}
-                />
-            </mesh>
-
-            {/* Liquid - Visible from all sides */}
+            {/* Liquid */}
             <mesh ref={liquidRef} position={[0, -1.5 + liquidLevel, 0]}>
-                <cylinderGeometry args={[0.945, 0.945, Math.max(liquidLevel * 2, 0.0001), 32]} />
-                <meshPhysicalMaterial
+                <cylinderGeometry args={[0.95, 0.95, Math.max(liquidLevel * 2, 0.01), 16]} />
+                <meshStandardMaterial
                     color={liquidColor}
                     transparent
-                    opacity={1}
-                    transmission={0.8}
-                    thickness={Math.max(liquidLevel * 0.08, 0.01)}
-                    roughness={0.02}
-                    metalness={0.0}
-                    ior={1.33}
-                    clearcoat={0.2}
-                    clearcoatRoughness={0.1}
+                    opacity={0.8}
                     side={THREE.DoubleSide}
-                    depthWrite={false}
                 />
             </mesh>
 
@@ -157,6 +115,11 @@ export const Beaker = ({ position, liquidColor, liquidLevel, showBubbles }: Beak
                 <cylinderGeometry args={[1, 1, 0.1, 32]} />
                 <meshStandardMaterial color="#cccccc" />
             </mesh>
+
+            {/* Fire effect for flammable chemicals */}
+            {fireIntensity > 0 && (
+                <Fire intensity={fireIntensity} position={[0, -0.5, 0]} />
+            )}
         </group>
     );
 };

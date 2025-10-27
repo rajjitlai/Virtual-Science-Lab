@@ -2,6 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { callGemmaModel, SYSTEM_PROMPT } from '../../config/ai-service';
 import type { Message } from '../../types/chat';
 import { useChatHistory } from '../../contexts/ChatHistoryContext';
+import { useSimulator } from '../../contexts/SimulatorContext';
+import { CHEMICALS } from '../../types/chemistry';
+import type { Chemical } from '../../types/chemistry';
 
 interface AIAssistantProps {
     isOpen: boolean;
@@ -19,10 +22,11 @@ interface APIError {
 
 export const AIAssistant = ({ isOpen, onClose, context, initialMessages, isContinuedChat }: AIAssistantProps) => {
     const { saveSession, isCloudStorage } = useChatHistory();
-    const [messages, setMessages] = useState<Message[]>(initialMessages && initialMessages.length > 0 
-        ? initialMessages 
-        : (isContinuedChat 
-            ? [] 
+    const { triggerChemicalReaction } = useSimulator();
+    const [messages, setMessages] = useState<Message[]>(initialMessages && initialMessages.length > 0
+        ? initialMessages
+        : (isContinuedChat
+            ? []
             : [
                 {
                     id: '1',
@@ -276,8 +280,7 @@ Assistant:`
 
                 // Collect all consecutive list items
                 while (j < lines.length &&
-                    (lines[j].trim().startsWith('* ') || lines[j].trim().startsWith('- ')))
-                {
+                    (lines[j].trim().startsWith('* ') || lines[j].trim().startsWith('- '))) {
                     const listItemContent = lines[j].trim().substring(2);
                     listItems.push(<li key={key++} dangerouslySetInnerHTML={{ __html: processInlineFormatting(listItemContent) }} />);
                     j++;
@@ -303,12 +306,53 @@ Assistant:`
         return elements;
     };
 
+    const handleTestInSimulator = (chemicalNames: string[]) => {
+        // Find chemicals by name from the predefined list
+        const chemicalsToAdd: Chemical[] = [];
+
+        chemicalNames.forEach(name => {
+            const chemical = CHEMICALS.find(c =>
+                c.name.toLowerCase() === name.toLowerCase() ||
+                c.id.toLowerCase() === name.toLowerCase()
+            );
+            if (chemical) {
+                chemicalsToAdd.push(chemical);
+            }
+        });
+
+        if (chemicalsToAdd.length > 0) {
+            triggerChemicalReaction(chemicalsToAdd);
+            onClose();
+        }
+    };
+
+    const parseReactionButton = (content: string) => {
+        // Check if the message mentions specific chemical reactions
+        const reactionPatterns = [
+            { chemicals: ['vinegar', 'baking soda'], regex: /vinegar.*baking soda|baking soda.*vinegar/i },
+            { chemicals: ['water', 'salt'], regex: /salt.*water|water.*salt/i },
+            { chemicals: ['water', 'sugar'], regex: /sugar.*water|water.*sugar/i },
+            { chemicals: ['ethanol'], regex: /ethanol|alcohol/i },
+            { chemicals: ['methane'], regex: /methane|natural gas/i },
+            { chemicals: ['methane'], regex: /fire.*methane|methane.*fire|burn.*methane|methane.*burn/i },
+            { chemicals: ['ethanol'], regex: /fire.*ethanol|ethanol.*fire|burn.*ethanol|ethanol.*burn/i },
+            { chemicals: ['methane'], regex: /flammable|combustible|ignite/i },
+        ];
+
+        for (const pattern of reactionPatterns) {
+            if (pattern.regex.test(content)) {
+                return pattern.chemicals;
+            }
+        }
+        return null;
+    };
+
     const quickQuestions = [
         "What happens when vinegar and baking soda mix?",
-        "Explain gravity in simple terms",
+        "What happens when methane burns?",
         "Why do objects bounce?",
         "What is a chemical reaction?",
-        "How does mass affect falling speed?",
+        "How does fire work?",
     ];
 
     if (!isOpen) return null;
@@ -341,26 +385,42 @@ Assistant:`
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
+                    {messages.map((message) => {
+                        const chemicalsInMessage = message.role === 'assistant' ? parseReactionButton(message.content) : null;
+
+                        return (
                             <div
-                                className={`max-w-[80%] rounded-2xl p-4 ${message.role === 'user'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'}
-                                    }`}
+                                key={message.id}
+                                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                             >
-                                <div className="markdown-content">
-                                    {parseMarkdown(message.content)}
+                                <div
+                                    className={`max-w-[80%] rounded-2xl p-4 ${message.role === 'user'
+                                        ? 'bg-indigo-600 text-white'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'}
+                                        }`}
+                                >
+                                    <div className="markdown-content">
+                                        {parseMarkdown(message.content)}
+                                    </div>
+
+                                    {/* Test in Simulator button for chemistry reactions */}
+                                    {context === 'chemistry' && chemicalsInMessage && (
+                                        <button
+                                            onClick={() => handleTestInSimulator(chemicalsInMessage)}
+                                            className="mt-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                                        >
+                                            <span>🧪</span>
+                                            <span>Test in Simulator</span>
+                                        </button>
+                                    )}
+
+                                    <p className="text-xs mt-2 opacity-70">
+                                        {message.timestamp.toLocaleTimeString()}
+                                    </p>
                                 </div>
-                                <p className="text-xs mt-2 opacity-70">
-                                    {message.timestamp.toLocaleTimeString()}
-                                </p>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
 
                     {isLoading && (
                         <div className="flex justify-start">

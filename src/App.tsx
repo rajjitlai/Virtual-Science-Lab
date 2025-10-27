@@ -4,6 +4,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { ChatHistoryProvider } from './contexts/ChatHistoryContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 import { AppwriteProvider, useAppwrite } from './contexts/AppwriteContext';
+import { SimulatorProvider } from './contexts/SimulatorContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LoadingScreen } from './components/common/LoadingScreen';
 import { WelcomeTour } from './components/common/WelcomeTour';
@@ -226,8 +227,9 @@ function App() {
         <AuthProvider>
           <AppwriteProvider>
             <ChatHistoryProvider>
-              <ToastProvider>
-                <BrowserRouter>
+              <SimulatorProvider>
+                <ToastProvider>
+                  <BrowserRouter>
                   <Routes>
                     <Route path="/login" element={
                       <AuthRedirect>
@@ -242,8 +244,9 @@ function App() {
                     } />
                     <Route path="/" element={<Navigate to="/lab" />} />
                   </Routes>
-                </BrowserRouter>
-              </ToastProvider>
+                  </BrowserRouter>
+                </ToastProvider>
+              </SimulatorProvider>
             </ChatHistoryProvider>
           </AppwriteProvider>
         </AuthProvider>

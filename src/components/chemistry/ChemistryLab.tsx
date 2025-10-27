@@ -1,24 +1,30 @@
 import { useState, useEffect } from 'react';
 import { ChemistryScene } from './ChemistryScene';
 import { CHEMICALS, REACTIONS } from '../../types/chemistry';
-import type { Chemical, Mixture } from '../../types/chemistry';
+import type { Chemical, Mixture, ReactionProduct, Reaction } from '../../types/chemistry';
 import { callGemmaModel } from '../../config/ai-service';
 import { useAppwrite } from '../../contexts/AppwriteContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useSimulator } from '../../contexts/SimulatorContext';
 import { playBeep, playBubblesSound, playReactionSound, playResetSound } from '../../utils/sound';
 
 export const ChemistryLab = () => {
     const { loadMixtures, saveMixture } = useAppwrite();
     const { showToast } = useToast();
+    const { pendingChemicals, clearPendingChemicals } = useSimulator();
     const [selectedChemicals, setSelectedChemicals] = useState<Chemical[]>([]);
     const [liquidColor, setLiquidColor] = useState('#00aaff');
-    const [liquidLevel, setLiquidLevel] = useState(0.5);
+    const [liquidLevel, setLiquidLevel] = useState(0.25);
     const [showBubbles, setShowBubbles] = useState(false);
-    const [reactionMessage, setReactionMessage] = useState('');
+    const [reactionProduct, setReactionProduct] = useState<ReactionProduct | null>(null);
+    const [currentReaction, setCurrentReaction] = useState<Reaction | null>(null);
+    const [fireIntensity, setFireIntensity] = useState(0);
+    const [showRobot, setShowRobot] = useState(true);
     const [customChemicalName, setCustomChemicalName] = useState('');
     const [customChemicalFormula, setCustomChemicalFormula] = useState('');
     const [recentMixtures, setRecentMixtures] = useState<Mixture[]>([]);
     const [isAIProcessing, setIsAIProcessing] = useState(false);
+    const [aiResponse, setAiResponse] = useState<string>('');
 
     // Load recent mixtures from Appwrite
     useEffect(() => {
@@ -35,12 +41,78 @@ export const ChemistryLab = () => {
         loadMixturesData();
     }, [loadMixtures, showToast]);
 
+    // Handle AI-triggered chemicals from simulator context
+    useEffect(() => {
+        if (pendingChemicals.length > 0) {
+            try {
+                // Reset state directly
+                setSelectedChemicals([]);
+                setLiquidColor('#00aaff');
+                setLiquidLevel(0.25);
+                setShowBubbles(false);
+                setReactionProduct(null);
+                setCurrentReaction(null);
+                setFireIntensity(0);
+
+                // Add chemicals from AI with a small delay for each
+                let currentSelection: Chemical[] = [];
+
+                pendingChemicals.forEach((chemical, index) => {
+                    setTimeout(() => {
+                        try {
+                            currentSelection = [...currentSelection, chemical];
+
+                            // Apply chemical effects
+                            setSelectedChemicals(currentSelection);
+                            setLiquidLevel(Math.min(0.25 + (currentSelection.length * 0.25), 1.0));
+
+                            // Mix colors safely
+                            if (currentSelection.length > 1) {
+                                const mixedColor = mixColors(currentSelection[0].color, chemical.color);
+                                setLiquidColor(mixedColor);
+                            } else {
+                                setLiquidColor(chemical.color);
+                            }
+
+                            // Check for flammable chemicals
+                            const flammableChemicals = currentSelection.filter(c => c.flammable);
+                            if (flammableChemicals.length > 0) {
+                                const flammabilityLevels = flammableChemicals.map(c => c.flammabilityLevel || 0);
+                                const maxFlammability = Math.max(...flammabilityLevels);
+                                const chemicalCount = flammableChemicals.length;
+                                const intensity = Math.min(maxFlammability * (1 + chemicalCount * 0.2), 10);
+                                setFireIntensity(intensity);
+                            }
+
+                            // Check for reactions
+                            checkReaction(currentSelection);
+
+                            // Play sound
+                            playBeep(440, 0.1);
+                        } catch (error) {
+                            console.error('Error processing chemical:', error);
+                        }
+                    }, index * 800);
+                });
+
+                // Show toast
+                showToast('Testing reaction in simulator...', 'info');
+
+                // Clear pending chemicals
+                clearPendingChemicals();
+            } catch (error) {
+                console.error('Error handling pending chemicals:', error);
+                clearPendingChemicals();
+            }
+        }
+    }, [pendingChemicals, clearPendingChemicals, showToast]);
+
     const handleAddChemical = (chemical: Chemical) => {
         const newSelection = [...selectedChemicals, chemical];
         setSelectedChemicals(newSelection);
 
-        // Increase liquid level
-        setLiquidLevel(Math.min(liquidLevel + 0.3, 1.4));
+        // Increase liquid level - quarter fill simulation
+        setLiquidLevel(Math.min(liquidLevel + 0.25, 1.0));
 
         // Mix colors
         if (selectedChemicals.length > 0) {
@@ -50,11 +122,49 @@ export const ChemistryLab = () => {
             setLiquidColor(chemical.color);
         }
 
+        // Check for flammable chemicals and calculate fire intensity
+        const flammableChemicals = newSelection.filter(c => c.flammable);
+        if (flammableChemicals.length > 0) {
+            const maxFlammability = Math.max(...flammableChemicals.map(c => c.flammabilityLevel || 0));
+            const chemicalCount = flammableChemicals.length;
+            const intensity = Math.min(maxFlammability * (1 + chemicalCount * 0.2), 10);
+            setFireIntensity(intensity);
+        } else {
+            setFireIntensity(0);
+        }
+
         // Check for reactions
         checkReaction(newSelection);
 
         // Play sound effect
         playBeep(440, 0.1);
+
+        // Set AI response
+        setAiResponse(`Added ${chemical.name} to the mixture. Current liquid level: ${Math.round((liquidLevel + 0.25) * 100)}%`);
+    };
+
+    const handleRemoveChemical = (chemicalId: string) => {
+        setSelectedChemicals(prev => {
+            const updated = prev.filter(c => c.id !== chemicalId);
+
+            // Update liquid color based on remaining chemicals
+            if (updated.length === 0) {
+                setLiquidColor('#00aaff');
+                setLiquidLevel(0.25);
+            } else if (updated.length === 1) {
+                setLiquidColor(updated[0].color);
+            } else {
+                const newColor = mixColors(updated[0].color, updated[updated.length - 1].color);
+                setLiquidColor(newColor);
+            }
+
+            // Check for reactions with remaining chemicals
+            checkReaction(updated);
+
+            return updated;
+        });
+
+        showToast('Chemical removed', 'info');
     };
 
     const handleAddCustomChemical = async () => {
@@ -63,6 +173,9 @@ export const ChemistryLab = () => {
         setIsAIProcessing(true);
 
         try {
+            // Set AI response for display
+            setAiResponse(`Analyzing chemical: ${customChemicalName}...`);
+
             // Ask AI to determine properties for the custom chemical
             const prompt = `Based on the name "${customChemicalName}", provide the following information in JSON format:
 1. A realistic chemical formula (if applicable)
@@ -187,11 +300,10 @@ Respond ONLY with JSON in this format:
         }
 
         // Show a message
-        setReactionMessage(`Loaded mixture: ${mixture.name}`);
+        showToast(`Loaded mixture: ${mixture.name}`, 'info');
 
         // Play sound
         playBeep(392, 0.15);
-        showToast(`Loaded mixture: ${mixture.name}`, 'info');
     };
 
     const checkReaction = (chemicals: Chemical[]) => {
@@ -202,7 +314,9 @@ Respond ONLY with JSON in this format:
         );
 
         if (reaction) {
-            setReactionMessage(reaction.description);
+            setReactionProduct(reaction.product);
+            setCurrentReaction(reaction);
+            setAiResponse(`🎉 Reaction detected! ${reaction.description} The product is ${reaction.product.name} (${reaction.product.formula})`);
             if (reaction.visualization === 'bubbles') {
                 setShowBubbles(true);
                 setTimeout(() => setShowBubbles(false), 5000);
@@ -216,31 +330,54 @@ Respond ONLY with JSON in this format:
     };
 
     const mixColors = (color1: string, color2: string) => {
-        // Simple color mixing (average RGB values)
-        const hex1 = color1.replace('#', '');
-        const hex2 = color2.replace('#', '');
+        try {
+            // Enhanced color mixing with vibrancy
+            const hex1 = color1.replace('#', '');
+            const hex2 = color2.replace('#', '');
 
-        const r1 = parseInt(hex1.substring(0, 2), 16);
-        const g1 = parseInt(hex1.substring(2, 4), 16);
-        const b1 = parseInt(hex1.substring(4, 6), 16);
+            // Validate hex colors
+            if (hex1.length !== 6 || hex2.length !== 6) {
+                return '#cccccc'; // Default color if invalid
+            }
 
-        const r2 = parseInt(hex2.substring(0, 2), 16);
-        const g2 = parseInt(hex2.substring(2, 4), 16);
-        const b2 = parseInt(hex2.substring(4, 6), 16);
+            const r1 = parseInt(hex1.substring(0, 2), 16);
+            const g1 = parseInt(hex1.substring(2, 4), 16);
+            const b1 = parseInt(hex1.substring(4, 6), 16);
 
-        const r = Math.floor((r1 + r2) / 2);
-        const g = Math.floor((g1 + g2) / 2);
-        const b = Math.floor((b1 + b2) / 2);
+            const r2 = parseInt(hex2.substring(0, 2), 16);
+            const g2 = parseInt(hex2.substring(2, 4), 16);
+            const b2 = parseInt(hex2.substring(4, 6), 16);
 
-        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+            // Check for NaN values
+            if (isNaN(r1) || isNaN(g1) || isNaN(b1) || isNaN(r2) || isNaN(g2) || isNaN(b2)) {
+                return '#cccccc'; // Default color if parsing failed
+            }
+
+            // Weighted mixing (60% first color, 40% second color)
+            const r = Math.floor(r1 * 0.6 + r2 * 0.4);
+            const g = Math.floor(g1 * 0.6 + g2 * 0.4);
+            const b = Math.floor(b1 * 0.6 + b2 * 0.4);
+
+            // Enhance vibrancy
+            const enhancedR = Math.min(255, Math.floor(r * 1.1));
+            const enhancedG = Math.min(255, Math.floor(g * 1.1));
+            const enhancedB = Math.min(255, Math.floor(b * 1.1));
+
+            return `#${enhancedR.toString(16).padStart(2, '0')}${enhancedG.toString(16).padStart(2, '0')}${enhancedB.toString(16).padStart(2, '0')}`;
+        } catch (error) {
+            console.error('Error mixing colors:', error);
+            return '#cccccc'; // Default color on error
+        }
     };
 
     const handleReset = () => {
         setSelectedChemicals([]);
         setLiquidColor('#00aaff');
-        setLiquidLevel(0.5);
+        setLiquidLevel(0.25);
         setShowBubbles(false);
-        setReactionMessage('');
+        setReactionProduct(null);
+        setCurrentReaction(null);
+        setFireIntensity(0);
 
         // Play reset sound
         playResetSound();
@@ -248,154 +385,233 @@ Respond ONLY with JSON in this format:
     };
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-                <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">
-                    🧪 Chemistry Lab
-                </h2>
-
-                <ChemistryScene
-                    liquidColor={liquidColor}
-                    liquidLevel={liquidLevel}
-                    showBubbles={showBubbles}
-                />
-
-                {reactionMessage && (
-                    <div className="mt-4 p-4 bg-yellow-100 dark:bg-yellow-900 border-l-4 border-yellow-500 text-yellow-800 dark:text-yellow-200">
-                        <p className="font-semibold">⚗️ Reaction Detected!</p>
-                        <p>{reactionMessage}</p>
-                    </div>
-                )}
-            </div>
-
-            {/* Custom Chemical Input */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-                <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
-                    Add Custom Chemical
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Chemical Name
-                        </label>
-                        <input
-                            type="text"
-                            value={customChemicalName}
-                            onChange={(e) => setCustomChemicalName(e.target.value)}
-                            placeholder="e.g., Hydrogen Peroxide"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                            disabled={isAIProcessing}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Chemical Formula (Optional)
-                        </label>
-                        <input
-                            type="text"
-                            value={customChemicalFormula}
-                            onChange={(e) => setCustomChemicalFormula(e.target.value)}
-                            placeholder="e.g., H₂O₂"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                            disabled={isAIProcessing}
-                        />
-                    </div>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+            <div className="max-w-7xl mx-auto space-y-6">
+                {/* Header Section */}
+                <div className="text-center mb-8">
+                    <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">
+                        🧪 Virtual Chemistry Lab
+                    </h1>
+                    <p className="text-lg text-gray-600 dark:text-gray-300">
+                        Experiment with chemicals, observe reactions, and learn chemistry interactively
+                    </p>
                 </div>
-                <button
-                    onClick={handleAddCustomChemical}
-                    disabled={!customChemicalName.trim() || isAIProcessing}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                >
-                    {isAIProcessing ? (
-                        <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Processing with AI...
-                        </>
-                    ) : 'Add Custom Chemical'}
-                </button>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    Note: The AI assistant will help determine properties for custom chemicals.
-                </p>
-            </div>
 
-            {/* Recent Mixtures */}
-            {recentMixtures.length > 0 && (
+                {/* Main Lab Section */}
+                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
+                            <span className="text-3xl">🔬</span>
+                            Laboratory Workspace
+                        </h2>
+                        <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${showRobot ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                            <span className="text-sm text-gray-600 dark:text-gray-300">
+                                {showRobot ? 'Robot Active' : 'Robot Inactive'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <ChemistryScene
+                        liquidColor={liquidColor}
+                        liquidLevel={liquidLevel}
+                        showBubbles={showBubbles}
+                        reactionProduct={reactionProduct}
+                        selectedChemicals={selectedChemicals}
+                        reaction={currentReaction}
+                        fireIntensity={fireIntensity}
+                        showRobot={showRobot}
+                        aiResponse={aiResponse}
+                    />
+                </div>
+
+                {/* Custom Chemical Input */}
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xl font-bold text-gray-800 dark:text-white">
-                            Recent Mixtures
-                        </h3>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {recentMixtures.map((mixture) => (
-                            <button
-                                key={mixture.id}
-                                onClick={() => handleLoadMixture(mixture)}
-                                className="p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 transition-all text-left"
-                                style={{ backgroundColor: `${mixture.color}22` }}
-                            >
-                                <p className="font-bold text-gray-800 dark:text-white">{mixture.name}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                    {mixture.createdAt.toLocaleDateString()}
-                                </p>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">
-                        Available Chemicals
+                    <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
+                        Add Custom Chemical
                     </h3>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={handleSaveMixture}
-                            disabled={selectedChemicals.length === 0}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Save Mixture
-                        </button>
-                        <button
-                            onClick={handleReset}
-                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
-                        >
-                            Reset Beaker
-                        </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Chemical Name
+                            </label>
+                            <input
+                                type="text"
+                                value={customChemicalName}
+                                onChange={(e) => setCustomChemicalName(e.target.value)}
+                                placeholder="e.g., Hydrogen Peroxide"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                                disabled={isAIProcessing}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Chemical Formula (Optional)
+                            </label>
+                            <input
+                                type="text"
+                                value={customChemicalFormula}
+                                onChange={(e) => setCustomChemicalFormula(e.target.value)}
+                                placeholder="e.g., H₂O₂"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                                disabled={isAIProcessing}
+                            />
+                        </div>
                     </div>
+                    <button
+                        onClick={handleAddCustomChemical}
+                        disabled={!customChemicalName.trim() || isAIProcessing}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    >
+                        {isAIProcessing ? (
+                            <>
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Processing with AI...
+                            </>
+                        ) : 'Add Custom Chemical'}
+                    </button>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        Note: The AI assistant will help determine properties for custom chemicals.
+                    </p>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {CHEMICALS.map((chemical) => (
-                        <button
-                            key={chemical.id}
-                            onClick={() => handleAddChemical(chemical)}
-                            className="p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 transition-all"
-                            style={{ backgroundColor: `${chemical.color}22` }}
-                        >
-                            <div className="text-left">
-                                <p className="font-bold text-gray-800 dark:text-white">{chemical.name}</p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{chemical.formula}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                    {chemical.state} • pH: {chemical.pH}
-                                </p>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-
-                {selectedChemicals.length > 0 && (
-                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
-                        <p className="font-semibold text-gray-800 dark:text-white">Mixed Chemicals:</p>
-                        <p className="text-gray-600 dark:text-gray-300">
-                            {selectedChemicals.map(c => c.name).join(' + ')}
-                        </p>
+                {/* Recent Mixtures */}
+                {recentMixtures.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+                                Recent Mixtures
+                            </h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {recentMixtures.map((mixture) => (
+                                <button
+                                    key={mixture.id}
+                                    onClick={() => handleLoadMixture(mixture)}
+                                    className="p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 transition-all text-left"
+                                    style={{ backgroundColor: `${mixture.color}22` }}
+                                >
+                                    <p className="font-bold text-gray-800 dark:text-white">{mixture.name}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                        {mixture.createdAt.toLocaleDateString()}
+                                    </p>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
+
+                {/* Chemical Selection Section */}
+                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+                    <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
+                        <div>
+                            <h3 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3 mb-2">
+                                <span className="text-2xl">⚗️</span>
+                                Chemical Library
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-300">
+                                Click on chemicals to add them to your experiment
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                            <button
+                                onClick={() => setShowRobot(!showRobot)}
+                                className={`${showRobot ? 'bg-indigo-600 hover:bg-indigo-700 shadow-lg' : 'bg-gray-400 hover:bg-gray-500'} text-white px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-2 font-medium`}
+                            >
+                                <span className="text-lg">🤖</span>
+                                {showRobot ? 'Robot Active' : 'Activate Robot'}
+                            </button>
+                            <button
+                                onClick={handleSaveMixture}
+                                disabled={selectedChemicals.length === 0}
+                                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 font-medium shadow-lg"
+                            >
+                                <span className="text-lg">💾</span>
+                                Save Mixture
+                            </button>
+                            <button
+                                onClick={handleReset}
+                                className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl transition-all duration-200 flex items-center gap-2 font-medium shadow-lg"
+                            >
+                                <span className="text-lg">🔄</span>
+                                Reset Lab
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Selected Chemicals Display */}
+                    {selectedChemicals.length > 0 && (
+                        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 rounded-xl border border-blue-200 dark:border-gray-600">
+                            <h4 className="font-semibold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                                <span className="text-lg">🧪</span>
+                                Current Mixture ({selectedChemicals.length} chemicals)
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                                {selectedChemicals.map((chemical) => (
+                                    <div
+                                        key={chemical.id}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white shadow-md"
+                                        style={{ backgroundColor: chemical.color }}
+                                    >
+                                        <span>{chemical.name}</span>
+                                        <button
+                                            onClick={() => handleRemoveChemical(chemical.id)}
+                                            className="hover:bg-white hover:bg-opacity-20 rounded-full p-1 transition-colors"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        {CHEMICALS.map((chemical) => {
+                            const isSelected = selectedChemicals.some(c => c.id === chemical.id);
+                            return (
+                                <button
+                                    key={chemical.id}
+                                    onClick={() => handleAddChemical(chemical)}
+                                    className={`group p-4 rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg ${isSelected
+                                        ? 'ring-2 ring-indigo-500 shadow-lg scale-105'
+                                        : 'border-2 border-gray-200 dark:border-gray-600 hover:border-indigo-400'
+                                        }`}
+                                    style={{
+                                        backgroundColor: isSelected ? chemical.color : `${chemical.color}15`,
+                                        borderColor: isSelected ? chemical.color : undefined
+                                    }}
+                                >
+                                    <div className="text-center">
+                                        <div
+                                            className="w-8 h-8 mx-auto mb-2 rounded-full border-2 border-white shadow-md"
+                                            style={{ backgroundColor: chemical.color }}
+                                        ></div>
+                                        <p className="font-bold text-gray-800 dark:text-white text-sm mb-1">
+                                            {chemical.name}
+                                        </p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                            {chemical.formula}
+                                        </p>
+                                        <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-500">
+                                            <span className="capitalize">{chemical.state}</span>
+                                            <span>•</span>
+                                            <span>pH: {chemical.pH}</span>
+                                        </div>
+                                        {chemical.flammable && (
+                                            <div className="mt-1 text-xs text-red-600 dark:text-red-400 font-medium">
+                                                ⚠️ Flammable
+                                            </div>
+                                        )}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
         </div>
     );
