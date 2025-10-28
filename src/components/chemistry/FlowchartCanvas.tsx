@@ -69,25 +69,14 @@ const AnimatedNode = ({ position, chemical, delay, isActive }: AnimatedNodeProps
             <Text
                 position={[0, -0.6, 0]}
                 fontSize={0.15}
-                color="#333333"
+                color="#ffffff"
                 anchorX="center"
                 anchorY="middle"
             >
                 {chemical.name}
             </Text>
 
-            {/* Chemical formula with proper subscript rendering */}
-            <Text
-                position={[0, -0.8, 0]}
-                fontSize={0.1}
-                color="#666666"
-                anchorX="center"
-                anchorY="middle"
-            >
-                {chemical.formula.replace(/\d+/g, (match) => {
-                    return match.split('').map(digit => '₀₁₂₃₄₅₆₇₈₉'[parseInt(digit)]).join('');
-                })}
-            </Text>
+            {/* Chemical name only - no formula */}
         </group>
     );
 };
@@ -215,25 +204,14 @@ const ProductNode = ({ position, product, progress }: ProductNodeProps) => {
             <Text
                 position={[0, -0.7, 0]}
                 fontSize={0.12}
-                color="#333333"
+                color="#ffffff"
                 anchorX="center"
                 anchorY="middle"
             >
                 {product.name}
             </Text>
 
-            {/* Product formula with proper subscript rendering */}
-            <Text
-                position={[0, -0.9, 0]}
-                fontSize={0.1}
-                color="#666666"
-                anchorX="center"
-                anchorY="middle"
-            >
-                {product.formula.replace(/\d+/g, (match) => {
-                    return match.split('').map(digit => '₀₁₂₃₄₅₆₇₈₉'[parseInt(digit)]).join('');
-                })}
-            </Text>
+            {/* Product name only - no formula */}
         </group>
     );
 };
@@ -336,6 +314,98 @@ export const FlowchartCanvas = ({ selectedChemicals, reaction, onClose }: Flowch
                     <ambientLight intensity={0.6} />
                     <directionalLight position={[5, 5, 5]} intensity={1} />
                     <pointLight position={[-5, 5, -5]} intensity={0.5} />
+
+                    {/* Laboratory Backdrop */}
+                    <group>
+                        {/* Back Wall */}
+                        <mesh position={[0, 2, -8]}>
+                            <planeGeometry args={[16, 8]} />
+                            <meshStandardMaterial color="#2d3748" />
+                        </mesh>
+
+                        {/* Left Wall */}
+                        <mesh position={[-8, 2, 0]} rotation={[0, Math.PI / 2, 0]}>
+                            <planeGeometry args={[16, 8]} />
+                            <meshStandardMaterial color="#4a5568" />
+                        </mesh>
+
+                        {/* Right Wall */}
+                        <mesh position={[8, 2, 0]} rotation={[0, -Math.PI / 2, 0]}>
+                            <planeGeometry args={[16, 8]} />
+                            <meshStandardMaterial color="#4a5568" />
+                        </mesh>
+
+                        {/* Floor */}
+                        <mesh position={[0, -2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                            <planeGeometry args={[16, 16]} />
+                            <meshStandardMaterial color="#1a202c" />
+                        </mesh>
+
+                        {/* Ceiling */}
+                        <mesh position={[0, 6, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                            <planeGeometry args={[16, 16]} />
+                            <meshStandardMaterial color="#1a202c" />
+                        </mesh>
+
+                        {/* Laboratory Equipment */}
+                        <group position={[-4, -1, -6]}>
+                            {/* Lab Table */}
+                            <mesh position={[0, 0.5, 0]}>
+                                <boxGeometry args={[3, 1, 1.5]} />
+                                <meshStandardMaterial color="#4a5568" />
+                            </mesh>
+
+                            {/* Test Tube Rack */}
+                            <mesh position={[0, 1.2, 0]}>
+                                <boxGeometry args={[2, 0.2, 0.8]} />
+                                <meshStandardMaterial color="#2d3748" />
+                            </mesh>
+
+                            {/* Test Tubes */}
+                            {Array.from({ length: 6 }, (_, i) => (
+                                <mesh key={i} position={[-0.8 + (i * 0.3), 1.5, 0]}>
+                                    <cylinderGeometry args={[0.05, 0.05, 0.6]} />
+                                    <meshStandardMaterial color="#e2e8f0" />
+                                </mesh>
+                            ))}
+                        </group>
+
+                        {/* Lab Equipment on Right */}
+                        <group position={[4, -1, -6]}>
+                            {/* Microscope */}
+                            <mesh position={[0, 0.3, 0]}>
+                                <boxGeometry args={[0.8, 0.6, 0.6]} />
+                                <meshStandardMaterial color="#2d3748" />
+                            </mesh>
+
+                            {/* Microscope Base */}
+                            <mesh position={[0, 0.1, 0]}>
+                                <cylinderGeometry args={[0.4, 0.4, 0.2]} />
+                                <meshStandardMaterial color="#4a5568" />
+                            </mesh>
+                        </group>
+
+                        {/* Periodic Table Poster */}
+                        <mesh position={[-6, 3, -7.9]}>
+                            <planeGeometry args={[2, 3]} />
+                            <meshStandardMaterial color="#f7fafc" />
+                        </mesh>
+
+                        {/* Safety Equipment */}
+                        <group position={[6, 1, -7.9]}>
+                            {/* Fire Extinguisher */}
+                            <mesh position={[0, 0.5, 0]}>
+                                <cylinderGeometry args={[0.2, 0.2, 1]} />
+                                <meshStandardMaterial color="#dc2626" />
+                            </mesh>
+
+                            {/* Safety Goggles */}
+                            <mesh position={[0, 1.2, 0]}>
+                                <boxGeometry args={[0.3, 0.1, 0.1]} />
+                                <meshStandardMaterial color="#fbbf24" />
+                            </mesh>
+                        </group>
+                    </group>
 
                     <Suspense fallback={null}>
                         {/* Reactant nodes */}

@@ -40,14 +40,14 @@ export const ReactionFlowchart = ({ selectedChemicals, reaction, onClose }: Reac
     return (
         <div className="absolute bottom-4 left-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl border-2 border-purple-500 dark:border-purple-400 max-w-2xl animate-in slide-in-from-bottom-4 duration-300">
             <div className="flex justify-between items-center mb-3">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-white dark:text-white flex items-center gap-2">
                     <span>📊</span>
                     <span>Reaction Process:</span>
                 </h3>
                 {onClose && (
                     <button
                         onClick={onClose}
-                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-lg font-bold hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full w-6 h-6 flex items-center justify-center"
+                        className="text-white hover:text-white dark:text-white dark:hover:text-white text-lg font-bold hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full w-6 h-6 flex items-center justify-center"
                         title="Close visualization"
                     >
                         ✕
@@ -67,11 +67,11 @@ export const ReactionFlowchart = ({ selectedChemicals, reaction, onClose }: Reac
                                     borderLeft: `4px solid ${chemical.color}`
                                 }}
                             >
-                                <div className="font-bold text-gray-800 dark:text-white">{chemical.name}</div>
-                                <div className="text-xs text-gray-600 dark:text-gray-400">{chemical.formula}</div>
+                                <div className="font-bold text-white dark:text-white">{chemical.name}</div>
+                                <div className="text-xs text-white dark:text-white">{chemical.formula}</div>
                             </div>
                             {idx < reactantChemicals.length - 1 && (
-                                <span className="mx-2 text-xl font-bold text-gray-500 dark:text-gray-400">+</span>
+                                <span className="mx-2 text-xl font-bold text-white dark:text-white">+</span>
                             )}
                         </div>
                     ))}
@@ -85,7 +85,7 @@ export const ReactionFlowchart = ({ selectedChemicals, reaction, onClose }: Reac
                             style={{ width: `${animationProgress}%` }}
                         />
                     </div>
-                    <div className="text-xl text-gray-600 dark:text-gray-400">→</div>
+                    <div className="text-xl text-white dark:text-white">→</div>
                 </div>
 
                 {/* Products */}
@@ -96,13 +96,13 @@ export const ReactionFlowchart = ({ selectedChemicals, reaction, onClose }: Reac
                         transform: `scale(${0.8 + (animationProgress / 100) * 0.2})`
                     }}
                 >
-                    <div className="font-bold text-gray-800 dark:text-white">{reaction.product.name}</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">{reaction.product.formula}</div>
+                    <div className="font-bold text-white dark:text-white">{reaction.product.name}</div>
+                    <div className="text-xs text-white dark:text-white">{reaction.product.formula}</div>
                 </div>
             </div>
 
             {/* Reaction Description */}
-            <div className="mt-3 text-xs text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-2">
+            <div className="mt-3 text-xs text-white dark:text-white border-t border-gray-200 dark:border-gray-700 pt-2">
                 <p>{reaction.description}</p>
             </div>
         </div>

@@ -146,6 +146,92 @@ export const ChemistryScene = ({ liquidColor, liquidLevel, showBubbles, reaction
                                 <planeGeometry args={[20, 20]} />
                                 <meshStandardMaterial color="#2d3748" />
                             </mesh>
+
+                            {/* Backdrop - Laboratory Environment */}
+                            <group>
+                                {/* Back Wall */}
+                                <mesh position={[0, 2, -8]}>
+                                    <planeGeometry args={[16, 8]} />
+                                    <meshStandardMaterial color="#1a202c" />
+                                </mesh>
+
+                                {/* Left Wall */}
+                                <mesh position={[-8, 2, 0]} rotation={[0, Math.PI / 2, 0]}>
+                                    <planeGeometry args={[16, 8]} />
+                                    <meshStandardMaterial color="#2d3748" />
+                                </mesh>
+
+                                {/* Right Wall */}
+                                <mesh position={[8, 2, 0]} rotation={[0, -Math.PI / 2, 0]}>
+                                    <planeGeometry args={[16, 8]} />
+                                    <meshStandardMaterial color="#2d3748" />
+                                </mesh>
+
+                                {/* Ceiling */}
+                                <mesh position={[0, 6, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                                    <planeGeometry args={[16, 16]} />
+                                    <meshStandardMaterial color="#1a202c" />
+                                </mesh>
+
+                                {/* Laboratory Equipment */}
+                                <group position={[-4, -1, -6]}>
+                                    {/* Lab Table */}
+                                    <mesh position={[0, 0.5, 0]}>
+                                        <boxGeometry args={[3, 1, 1.5]} />
+                                        <meshStandardMaterial color="#4a5568" />
+                                    </mesh>
+
+                                    {/* Test Tube Rack */}
+                                    <mesh position={[0, 1.2, 0]}>
+                                        <boxGeometry args={[2, 0.2, 0.8]} />
+                                        <meshStandardMaterial color="#2d3748" />
+                                    </mesh>
+
+                                    {/* Test Tubes */}
+                                    {Array.from({ length: 6 }, (_, i) => (
+                                        <mesh key={i} position={[-0.8 + (i * 0.3), 1.5, 0]}>
+                                            <cylinderGeometry args={[0.05, 0.05, 0.6]} />
+                                            <meshStandardMaterial color="#e2e8f0" />
+                                        </mesh>
+                                    ))}
+                                </group>
+
+                                {/* Lab Equipment on Right */}
+                                <group position={[4, -1, -6]}>
+                                    {/* Microscope */}
+                                    <mesh position={[0, 0.3, 0]}>
+                                        <boxGeometry args={[0.8, 0.6, 0.6]} />
+                                        <meshStandardMaterial color="#2d3748" />
+                                    </mesh>
+
+                                    {/* Microscope Base */}
+                                    <mesh position={[0, 0.1, 0]}>
+                                        <cylinderGeometry args={[0.4, 0.4, 0.2]} />
+                                        <meshStandardMaterial color="#4a5568" />
+                                    </mesh>
+                                </group>
+
+                                {/* Periodic Table Poster */}
+                                <mesh position={[-6, 3, -7.9]}>
+                                    <planeGeometry args={[2, 3]} />
+                                    <meshStandardMaterial color="#f7fafc" />
+                                </mesh>
+
+                                {/* Safety Equipment */}
+                                <group position={[6, 1, -7.9]}>
+                                    {/* Fire Extinguisher */}
+                                    <mesh position={[0, 0.5, 0]}>
+                                        <cylinderGeometry args={[0.2, 0.2, 1]} />
+                                        <meshStandardMaterial color="#dc2626" />
+                                    </mesh>
+
+                                    {/* Safety Goggles */}
+                                    <mesh position={[0, 1.2, 0]}>
+                                        <boxGeometry args={[0.3, 0.1, 0.1]} />
+                                        <meshStandardMaterial color="#fbbf24" />
+                                    </mesh>
+                                </group>
+                            </group>
                         </Canvas>
                     </ErrorBoundary>
 

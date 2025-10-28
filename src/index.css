@@ -74,3 +74,35 @@ body {
 .markdown-content a:hover {
   @apply text-blue-800 dark:text-blue-300;
 }
+
+/* Chemical formula styling */
+.chemical-formula {
+  font-family: 'Times New Roman', serif;
+  font-weight: normal;
+  line-height: 1.2;
+  display: inline-block;
+}
+
+.chemical-formula sub {
+  font-size: 0.7em;
+  vertical-align: sub;
+  line-height: 0;
+  font-weight: normal;
+  font-family: inherit;
+  position: relative;
+  bottom: -0.1em;
+}
+
+.chemical-formula sup {
+  font-size: 0.7em;
+  vertical-align: super;
+  line-height: 0;
+  font-weight: normal;
+  font-family: inherit;
+}
+
+/* Ensure subscripts don't get corrupted */
+.chemical-formula sub:before,
+.chemical-formula sub:after {
+  content: none;
+}

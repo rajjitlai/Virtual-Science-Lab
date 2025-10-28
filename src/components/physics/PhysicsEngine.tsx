@@ -11,6 +11,7 @@ interface PhysicsEngineProps {
     onStatsUpdate: (stats: { objects: number; kinetic: number; potential: number; total: number }) => void;
     airResistance?: number;
     friction?: number;
+    demoObjects?: any[];
 }
 
 // 3D Physics Objects
@@ -76,7 +77,7 @@ const Platform = ({ position, size }: { position: [number, number, number], size
     );
 };
 
-export const PhysicsEngine = ({ gravity, onStatsUpdate, airResistance = 0.1, friction = 0.3 }: PhysicsEngineProps) => {
+export const PhysicsEngine = ({ gravity, onStatsUpdate, airResistance = 0.1, friction = 0.3, demoObjects = [] }: PhysicsEngineProps) => {
     const [objects, setObjects] = useState<Array<PhysicsObject & { id: string, position: [number, number, number] }>>([]);
     const [isRunning, setIsRunning] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
@@ -204,6 +205,29 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate, airResistance = 0.1, fri
                                         />
                                     )
                                 ))}
+
+                                {/* Demo Objects */}
+                                {demoObjects.map((obj) => (
+                                    obj.type.includes('ball') ? (
+                                        <PhysicsBall
+                                            key={obj.id}
+                                            position={obj.position}
+                                            color={obj.color}
+                                            size={obj.type === 'ball-small' ? 0.3 : obj.type === 'ball-medium' ? 0.5 : 0.7}
+                                            mass={obj.mass || 1}
+                                            restitution={0.7}
+                                        />
+                                    ) : (
+                                        <PhysicsBox
+                                            key={obj.id}
+                                            position={obj.position}
+                                            color={obj.color}
+                                            size={obj.type === 'box-small' ? [0.4, 0.4, 0.4] : obj.type === 'box-medium' ? [0.6, 0.6, 0.6] : [0.8, 0.8, 0.8]}
+                                            mass={obj.mass || 1}
+                                            restitution={0.3}
+                                        />
+                                    )
+                                ))}
                             </Physics>
 
                             <OrbitControls
@@ -212,6 +236,103 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate, airResistance = 0.1, fri
                                 minDistance={5}
                                 maxDistance={20}
                             />
+
+                            {/* Physics Lab Backdrop */}
+                            <group>
+                                {/* Back Wall */}
+                                <mesh position={[0, 3, -10]}>
+                                    <planeGeometry args={[20, 12]} />
+                                    <meshStandardMaterial color="#1a202c" />
+                                </mesh>
+
+                                {/* Left Wall */}
+                                <mesh position={[-10, 3, 0]} rotation={[0, Math.PI / 2, 0]}>
+                                    <planeGeometry args={[20, 12]} />
+                                    <meshStandardMaterial color="#2d3748" />
+                                </mesh>
+
+                                {/* Right Wall */}
+                                <mesh position={[10, 3, 0]} rotation={[0, -Math.PI / 2, 0]}>
+                                    <planeGeometry args={[20, 12]} />
+                                    <meshStandardMaterial color="#2d3748" />
+                                </mesh>
+
+                                {/* Ceiling */}
+                                <mesh position={[0, 9, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                                    <planeGeometry args={[20, 20]} />
+                                    <meshStandardMaterial color="#1a202c" />
+                                </mesh>
+
+                                {/* Physics Equipment */}
+                                <group position={[-6, -1, -8]}>
+                                    {/* Physics Table */}
+                                    <mesh position={[0, 0.5, 0]}>
+                                        <boxGeometry args={[4, 1, 2]} />
+                                        <meshStandardMaterial color="#4a5568" />
+                                    </mesh>
+
+                                    {/* Pendulum Setup */}
+                                    <mesh position={[0, 3, 0]}>
+                                        <boxGeometry args={[0.1, 0.1, 0.1]} />
+                                        <meshStandardMaterial color="#2d3748" />
+                                    </mesh>
+
+                                    {/* Pendulum String */}
+                                    <mesh position={[0, 1.5, 0]}>
+                                        <cylinderGeometry args={[0.01, 0.01, 3]} />
+                                        <meshStandardMaterial color="#6b7280" />
+                                    </mesh>
+
+                                    {/* Pendulum Bob */}
+                                    <mesh position={[0, 0, 0]}>
+                                        <sphereGeometry args={[0.2]} />
+                                        <meshStandardMaterial color="#dc2626" />
+                                    </mesh>
+                                </group>
+
+                                {/* Lab Equipment on Right */}
+                                <group position={[6, -1, -8]}>
+                                    {/* Computer Station */}
+                                    <mesh position={[0, 0.3, 0]}>
+                                        <boxGeometry args={[1.5, 0.6, 1]} />
+                                        <meshStandardMaterial color="#2d3748" />
+                                    </mesh>
+
+                                    {/* Monitor */}
+                                    <mesh position={[0, 1, 0.5]}>
+                                        <boxGeometry args={[1.2, 0.8, 0.1]} />
+                                        <meshStandardMaterial color="#1f2937" />
+                                    </mesh>
+
+                                    {/* Keyboard */}
+                                    <mesh position={[0, 0.1, 0.3]}>
+                                        <boxGeometry args={[1, 0.05, 0.3]} />
+                                        <meshStandardMaterial color="#374151" />
+                                    </mesh>
+                                </group>
+
+                                {/* Physics Formulas Poster */}
+                                <mesh position={[-8, 4, -9.9]}>
+                                    <planeGeometry args={[3, 4]} />
+                                    <meshStandardMaterial color="#f7fafc" />
+                                </mesh>
+
+                                {/* Safety Equipment */}
+                                <group position={[8, 2, -9.9]}>
+                                    {/* First Aid Kit */}
+                                    <mesh position={[0, 0.5, 0]}>
+                                        <boxGeometry args={[0.4, 0.6, 0.2]} />
+                                        <meshStandardMaterial color="#dc2626" />
+                                    </mesh>
+
+                                    {/* Safety Signs */}
+                                    <mesh position={[0, 1.5, 0]}>
+                                        <boxGeometry args={[0.3, 0.3, 0.05]} />
+                                        <meshStandardMaterial color="#fbbf24" />
+                                    </mesh>
+                                </group>
+                            </group>
+
                             <Environment preset="sunset" />
                         </Canvas>
                     )}
@@ -250,8 +371,8 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate, airResistance = 0.1, fri
                                 onClick={() => addObject(obj)}
                                 disabled={!isInitialized}
                                 className={`p-3 rounded-lg border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${selectedObjectType === obj.id
-                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900 shadow-md'
-                                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-indigo-400 hover:shadow-sm'
+                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900 shadow-md'
+                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-indigo-400 hover:shadow-sm'
                                     }`}
                             >
                                 <div className="flex flex-col items-center gap-2">
@@ -290,8 +411,8 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate, airResistance = 0.1, fri
                                 onClick={() => addObject(obj)}
                                 disabled={!isInitialized}
                                 className={`p-3 rounded-lg border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${selectedObjectType === obj.id
-                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900 shadow-md'
-                                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-indigo-400 hover:shadow-sm'
+                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900 shadow-md'
+                                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-indigo-400 hover:shadow-sm'
                                     }`}
                             >
                                 <div className="flex flex-col items-center gap-2">

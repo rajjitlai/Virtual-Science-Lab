@@ -1,15 +1,22 @@
 import { useState, useEffect } from 'react';
 import { PhysicsEngine } from './PhysicsEngine';
 import { useToast } from '../../contexts/ToastContext';
+import { useDemo } from '../../contexts/DemoContext';
 
-export const PhysicsLab = () => {
+interface PhysicsLabProps {
+    demoScenario?: any;
+}
+
+export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
     const { showToast } = useToast();
+    const { isDemoRunning } = useDemo();
     const [gravity, setGravity] = useState(1);
     const [stats, setStats] = useState({ objects: 0, kinetic: 0, potential: 0, total: 0 });
     const [selectedPreset, setSelectedPreset] = useState('Earth');
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [airResistance, setAirResistance] = useState(0.1);
     const [friction, setFriction] = useState(0.3);
+    const [demoObjects, setDemoObjects] = useState<any[]>([]);
 
     const presets = [
         { name: 'Earth', value: 1, icon: '🌍', description: 'Standard Earth gravity', color: 'bg-blue-500' },
@@ -19,6 +26,67 @@ export const PhysicsLab = () => {
         { name: 'Zero G', value: 0, icon: '🚀', description: 'Zero gravity environment', color: 'bg-purple-500' },
         { name: 'Custom', value: gravity, icon: '⚙️', description: 'Custom gravity setting', color: 'bg-indigo-500' },
     ];
+
+    // Handle demo scenarios
+    useEffect(() => {
+        if (demoScenario) {
+            // Reset physics environment
+            setDemoObjects([]);
+
+            if (demoScenario.name === "Gravity Comparison") {
+                // Cycle through different gravity values
+                const gravityValues = demoScenario.gravity || [0.17, 0.38, 1, 2.5];
+                let currentIndex = 0;
+
+                const gravityInterval = setInterval(() => {
+                    setGravity(gravityValues[currentIndex]);
+                    setSelectedPreset(['Moon', 'Mars', 'Earth', 'Jupiter'][currentIndex] || 'Custom');
+
+                    // Add some objects to demonstrate gravity
+                    const newObjects = Array.from({ length: 3 }, (_, i) => ({
+                        id: `demo-${Date.now()}-${i}`,
+                        type: 'ball-small',
+                        position: [Math.random() * 4 - 2, 8, Math.random() * 4 - 2],
+                        mass: 1,
+                        color: '#ff6b6b'
+                    }));
+                    setDemoObjects(prev => [...prev, ...newObjects]);
+
+                    currentIndex = (currentIndex + 1) % gravityValues.length;
+                }, 3000);
+
+                // Clear objects after 2 seconds
+                setTimeout(() => {
+                    clearInterval(gravityInterval);
+                    setTimeout(() => setDemoObjects([]), 2000);
+                }, demoScenario.duration || 30000);
+
+            } else if (demoScenario.name === "Collision Physics") {
+                // Add objects for collision demo
+                const collisionObjects = [
+                    { id: 'demo-collision-1', type: 'ball-medium', position: [-3, 2, 0], mass: 2, color: '#4ecdc4' },
+                    { id: 'demo-collision-2', type: 'box-small', position: [3, 2, 0], mass: 1.5, color: '#45b7d1' },
+                    { id: 'demo-collision-3', type: 'ball-large', position: [0, 5, 0], mass: 3, color: '#f9ca24' }
+                ];
+                setDemoObjects(collisionObjects);
+
+                setTimeout(() => setDemoObjects([]), demoScenario.duration || 40000);
+
+            } else if (demoScenario.name === "Energy Conservation") {
+                // Demonstrate energy conservation with pendulum-like motion
+                setGravity(1);
+                setSelectedPreset('Earth');
+
+                const energyObjects = [
+                    { id: 'demo-energy-1', type: 'ball-large', position: [0, 8, 0], mass: 2, color: '#6c5ce7' },
+                    { id: 'demo-energy-2', type: 'box-large', position: [2, 6, 0], mass: 3, color: '#a29bfe' }
+                ];
+                setDemoObjects(energyObjects);
+
+                setTimeout(() => setDemoObjects([]), demoScenario.duration || 35000);
+            }
+        }
+    }, [demoScenario]);
 
     // Update kinetic energy calculation
     useEffect(() => {
@@ -51,6 +119,12 @@ export const PhysicsLab = () => {
                     <p className="text-base text-gray-600 dark:text-gray-300">
                         Explore gravity, motion, and physics through interactive 3D simulations
                     </p>
+                    {isDemoRunning && (
+                        <div className="mt-4 inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-4 py-2 rounded-full">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                            <span className="text-sm font-medium">Demo Mode Active</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Main Lab Section */}
@@ -65,7 +139,7 @@ export const PhysicsLab = () => {
                             <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                                 <span className="text-2xl">🔬</span>
                                 Physics Laboratory
-                            </h2>
+                </h2>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
@@ -75,13 +149,13 @@ export const PhysicsLab = () => {
                         </div>
                     </div>
 
-                    {/* Gravity Controls */}
+                {/* Gravity Controls */}
                     <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900 dark:to-blue-900 p-4 rounded-lg mb-4">
                         <div className="flex items-center justify-between mb-3">
                             <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
                                 <span className="text-xl">🌍</span>
                                 Gravity Settings
-                            </h3>
+                    </h3>
                             <button
                                 onClick={() => setShowAdvanced(!showAdvanced)}
                                 className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium px-2 py-1 rounded hover:bg-indigo-100 dark:hover:bg-indigo-800 transition-colors"
@@ -90,24 +164,24 @@ export const PhysicsLab = () => {
                             </button>
                         </div>
 
-                        <div className="space-y-4">
+                    <div className="space-y-4">
                             {/* Gravity Slider */}
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Gravity Strength
-                                    </label>
+                            </label>
                                     <span className="text-base font-bold text-indigo-600 dark:text-indigo-400">
                                         {gravity.toFixed(2)}g
                                     </span>
                                 </div>
                                 <div className="relative">
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="3"
-                                        step="0.1"
-                                        value={gravity}
+                            <input
+                                type="range"
+                                min="0"
+                                max="3"
+                                step="0.1"
+                                value={gravity}
                                         onChange={(e) => {
                                             setGravity(parseFloat(e.target.value));
                                             setSelectedPreset('Custom');
@@ -120,13 +194,13 @@ export const PhysicsLab = () => {
                                         <span>3g</span>
                                     </div>
                                 </div>
-                            </div>
+                        </div>
 
                             {/* Preset Buttons */}
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                {presets.map((preset) => (
-                                    <button
-                                        key={preset.name}
+                            {presets.map((preset) => (
+                                <button
+                                    key={preset.name}
                                         onClick={() => handlePresetChange(preset)}
                                         className={`p-3 rounded-lg font-medium transition-all duration-200 ${selectedPreset === preset.name
                                             ? `${preset.color} text-white shadow-md`
@@ -138,9 +212,9 @@ export const PhysicsLab = () => {
                                             <span className="font-semibold text-sm">{preset.name}</span>
                                         </div>
                                         <p className="text-xs opacity-80">{preset.description}</p>
-                                    </button>
-                                ))}
-                            </div>
+                                </button>
+                            ))}
+                        </div>
 
                             {/* Advanced Settings */}
                             {showAdvanced && (
@@ -178,8 +252,8 @@ export const PhysicsLab = () => {
                                     </div>
                                 </div>
                             )}
-                        </div>
                     </div>
+                </div>
 
                     {/* Real-time Stats Display */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -191,9 +265,9 @@ export const PhysicsLab = () => {
                                 <div>
                                     <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Objects</p>
                                     <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
-                                        {stats.objects}
-                                    </p>
-                                </div>
+                            {stats.objects}
+                        </p>
+                    </div>
                             </div>
                         </div>
 
@@ -237,15 +311,16 @@ export const PhysicsLab = () => {
                                     </p>
                                 </div>
                             </div>
-                        </div>
                     </div>
+                </div>
 
-                    {/* Physics Engine */}
+                {/* Physics Engine */}
                     <PhysicsEngine
                         gravity={gravity}
                         onStatsUpdate={setStats}
                         airResistance={airResistance}
                         friction={friction}
+                        demoObjects={demoObjects}
                     />
                 </div>
             </div>
@@ -280,7 +355,7 @@ export const PhysicsLab = () => {
                     </div>
                     <div className="space-y-3">
                         <h4 className="text-base font-semibold text-gray-800 dark:text-white mb-2">Advanced Features</h4>
-                        <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+                <ul className="space-y-2 text-gray-700 dark:text-gray-300">
                             <li className="flex items-start gap-2">
                                 <span className="text-purple-500 text-sm">⚙️</span>
                                 <span className="text-sm">Enable advanced settings for air resistance and friction</span>
@@ -297,7 +372,7 @@ export const PhysicsLab = () => {
                                 <span className="text-purple-500 text-sm">🎮</span>
                                 <span className="text-sm">Use mouse to rotate and zoom the 3D view</span>
                             </li>
-                        </ul>
+                </ul>
                     </div>
                 </div>
             </div>
@@ -335,7 +410,7 @@ export const PhysicsLab = () => {
                         <div className="flex items-center gap-2 mb-2">
                             <span className="text-lg">🏀</span>
                             <h4 className="text-base font-bold text-purple-800 dark:text-purple-200">Elastic Collisions</h4>
-                        </div>
+                    </div>
                         <p className="text-purple-700 dark:text-purple-300 text-xs">
                             Balls bounce back because they transfer kinetic energy during collisions.
                             The restitution value determines how bouncy objects are.
@@ -346,7 +421,7 @@ export const PhysicsLab = () => {
                         <div className="flex items-center gap-2 mb-2">
                             <span className="text-lg">🌪️</span>
                             <h4 className="text-base font-bold text-orange-800 dark:text-orange-200">Terminal Velocity</h4>
-                        </div>
+                    </div>
                         <p className="text-orange-700 dark:text-orange-300 text-xs">
                             Objects eventually reach a maximum falling speed due to air resistance.
                             Try adjusting the air resistance setting to see the effect.

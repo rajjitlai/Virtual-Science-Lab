@@ -31,7 +31,11 @@ export const AIAssistant = ({ isOpen, onClose, context, initialMessages, isConti
                 {
                     id: '1',
                     role: 'assistant',
-                    content: `Hi! 👋 I'm your AI Lab Assistant. I'm here to help you understand ${context || 'science'} experiments! Ask me anything about chemical reactions, physics concepts, or how things work. What would you like to learn today?`,
+                    content: `Hi! 👋 I'm your AI Lab Assistant. I'm here to help you understand ${context || 'science'} experiments! Ask me anything about chemical reactions, physics concepts, or how things work. 
+
+💡 **Pro tip:** Use \`/simulate [chemicals]\` to get a "Test in Simulator" button for any chemicals you want to experiment with!
+
+What would you like to learn today?`,
                     timestamp: new Date(),
                 },
             ])
@@ -99,6 +103,39 @@ export const AIAssistant = ({ isOpen, onClose, context, initialMessages, isConti
         setMessages((prev) => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
+
+        // Handle /simulate command specially
+        if (input.trim().toLowerCase() === '/simulate') {
+            const helpMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: `🧪 **Simulation Command Help**
+
+Use \`/simulate [chemicals]\` to get a "Test in Simulator" button for any chemicals!
+
+**Available chemicals:**
+- Water
+- Vinegar  
+- Baking Soda
+- Table Salt
+- Sugar
+- Lemon Juice
+- Ethanol
+- Methane
+
+**Examples:**
+- \`/simulate vinegar and baking soda\`
+- \`/simulate water, salt\`
+- \`/simulate ethanol\`
+- \`/simulate methane\`
+
+Just type the command with any combination of chemicals!`,
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, helpMessage]);
+            setIsLoading(false);
+            return;
+        }
 
         try {
             // Limit conversation history to last 6 messages to prevent context overflow
@@ -307,6 +344,38 @@ Assistant:`
     };
 
     const handleTestInSimulator = (chemicalNames: string[]) => {
+        // Handle help case
+        if (chemicalNames.includes('help')) {
+            const helpMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: `🧪 **Available Chemicals for Simulation**
+
+Here are all the chemicals you can use with \`/simulate\`:
+
+**Basic Chemicals:**
+- **Water** (H₂O) - Clear liquid, pH 7
+- **Vinegar** (CH₃COOH) - Yellow liquid, pH 3, acidic
+- **Baking Soda** (NaHCO₃) - White solid, pH 9, basic
+- **Table Salt** (NaCl) - White solid, pH 7, neutral
+- **Sugar** (C₁₂H₂₂O₁₁) - White solid, pH 7, sweet
+- **Lemon Juice** (C₆H₈O₇) - Yellow liquid, pH 2, very acidic
+
+**Flammable Chemicals:**
+- **Ethanol** (C₂H₅OH) - Clear liquid, flammable
+- **Methane** (CH₄) - Colorless gas, highly flammable
+
+**Try these combinations:**
+- \`/simulate vinegar and baking soda\` → Fizzing reaction!
+- \`/simulate water and salt\` → Salt dissolves
+- \`/simulate ethanol\` → Flammable liquid
+- \`/simulate methane\` → Flammable gas`,
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, helpMessage]);
+            return;
+        }
+
         // Find chemicals by name from the predefined list
         const chemicalsToAdd: Chemical[] = [];
 
@@ -327,6 +396,20 @@ Assistant:`
     };
 
     const parseReactionButton = (content: string) => {
+        // Check for /simulate command first
+        const simulateMatch = content.match(/\/simulate\s+(.+)/i);
+        if (simulateMatch) {
+            const chemicalText = simulateMatch[1];
+            // Parse chemicals from the text after /simulate
+            const chemicalNames = chemicalText.split(/[,\s+and]+/).map(name => name.trim()).filter(Boolean);
+            return chemicalNames;
+        }
+
+        // Check for just /simulate without chemicals
+        if (content.trim().toLowerCase() === '/simulate') {
+            return ['help']; // Special case for help
+        }
+
         // Check if the message mentions specific chemical reactions
         const reactionPatterns = [
             { chemicals: ['vinegar', 'baking soda'], regex: /vinegar.*baking soda|baking soda.*vinegar/i },
@@ -353,6 +436,8 @@ Assistant:`
         "Why do objects bounce?",
         "What is a chemical reaction?",
         "How does fire work?",
+        "/simulate vinegar and baking soda",
+        "/simulate water and salt",
     ];
 
     if (!isOpen) return null;
@@ -410,7 +495,12 @@ Assistant:`
                                             className="mt-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                                         >
                                             <span>🧪</span>
-                                            <span>Test in Simulator</span>
+                                            <span>
+                                                {chemicalsInMessage.includes('help')
+                                                    ? 'Show Available Chemicals'
+                                                    : `Test ${chemicalsInMessage.join(' + ')} in Simulator`
+                                                }
+                                            </span>
                                         </button>
                                     )}
 
@@ -454,6 +544,25 @@ Assistant:`
                                 </button>
                             ))}
                         </div>
+
+                        {context === 'chemistry' && (
+                            <div className="mt-3">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                    Try simulation commands:
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {['/simulate vinegar and baking soda', '/simulate water and salt', '/simulate ethanol'].map((command, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setInput(command)}
+                                            className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-3 py-1 rounded-full hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors font-mono"
+                                        >
+                                            {command}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 

@@ -5,9 +5,16 @@ import { ChatHistoryProvider } from './contexts/ChatHistoryContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 import { AppwriteProvider, useAppwrite } from './contexts/AppwriteContext';
 import { SimulatorProvider } from './contexts/SimulatorContext';
+import { SettingsProvider } from './contexts/SettingsContext';
+import { DemoProvider } from './contexts/DemoContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LoadingScreen } from './components/common/LoadingScreen';
 import { WelcomeTour } from './components/common/WelcomeTour';
+import { DemoMode } from './components/common/DemoMode';
+import { ExportModal } from './components/common/ExportModal';
+import { MobileNav } from './components/common/MobileNav';
+import { PerformanceMonitor } from './components/common/PerformanceMonitor';
+import { Analytics } from './components/common/Analytics';
 import { Login } from './components/auth/Login';
 import { VerificationPage } from './components/auth/VerificationPage';
 import { useState, useEffect, lazy, Suspense } from 'react';
@@ -53,11 +60,17 @@ const Lab = () => {
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [continuedChat, setContinuedChat] = useState<{ messages: any[]; context?: 'chemistry' | 'physics' } | null>(null);
   const [isContinuingChat, setIsContinuingChat] = useState(false);
   const [showWelcomeTour, setShowWelcomeTour] = useState(false);
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
+  const [exportData, setExportData] = useState<any>(null);
+  const [showPerformance, setShowPerformance] = useState(false);
+  const [demoScenario, setDemoScenario] = useState<any>(null);
 
   useEffect(() => {
     // Load user settings
@@ -108,35 +121,23 @@ const Lab = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <nav className="bg-white dark:bg-gray-800 shadow p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-800 dark:text-white">
-            🧪 Virtual Science Lab
-          </h1>
-          <div className="flex gap-4 items-center">
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              Welcome, {user?.name}
-            </span>
-            <button
-              onClick={() => setIsHistoryOpen(true)}
-              className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 text-2xl"
-              title="Chat History"
-            >
-              💬
-            </button>
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 text-2xl"
-              title="Settings"
-            >
-              ⚙️
-            </button>
-          </div>
-        </div>
-      </nav>
+      <MobileNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onDemoClick={() => setIsDemoOpen(true)}
+        onExportClick={() => {
+          setExportData({ type: activeTab, timestamp: new Date().toISOString() });
+          setIsExportOpen(true);
+        }}
+        onHistoryClick={() => setIsHistoryOpen(true)}
+        onSettingsClick={() => setIsSettingsOpen(true)}
+        onAnalyticsClick={() => setIsAnalyticsOpen(true)}
+        userName={user?.name}
+      />
 
       <main className="container mx-auto p-6">
-        <div className="flex gap-4 mb-6">
+        {/* Desktop Tab Navigation - Hidden on mobile */}
+        <div className="hidden lg:flex gap-4 mb-6">
           <button
             onClick={() => {
               setActiveTab('chemistry');
@@ -164,7 +165,7 @@ const Lab = () => {
         </div>
 
         <Suspense fallback={<LoadingScreen />}>
-          {activeTab === 'chemistry' && <ChemistryLab />}
+          {activeTab === 'chemistry' && <ChemistryLab demoScenario={demoScenario} />}
           {activeTab === 'physics' && <PhysicsLab />}
         </Suspense>
       </main>
@@ -191,8 +192,8 @@ const Lab = () => {
           initialSettings={userSettings}
           onSaveSettings={saveUserSettings}
         />
-        <ChatHistory 
-          isOpen={isHistoryOpen} 
+        <ChatHistory
+          isOpen={isHistoryOpen}
           onClose={() => setIsHistoryOpen(false)}
           onContinueChat={(session: ChatSession) => {
             setContinuedChat({ messages: session.messages, context: (session.context as 'chemistry' | 'physics') || activeTab });
@@ -200,7 +201,48 @@ const Lab = () => {
             setIsAIOpen(true);
           }}
         />
+        <DemoMode
+          isOpen={isDemoOpen}
+          onClose={() => {
+            setIsDemoOpen(false);
+            // Clear demo scenario after a delay to prevent glitching
+            setTimeout(() => setDemoScenario(null), 1000);
+          }}
+          onStartDemo={(demoType, scenario) => {
+            // Clear previous demo first
+            setDemoScenario(null);
+            // Small delay to prevent state conflicts
+            setTimeout(() => {
+              setActiveTab(demoType);
+              setDemoScenario(scenario);
+              showToast(`Starting ${scenario?.name || demoType} demo...`, 'info');
+            }, 100);
+          }}
+        />
+        <ExportModal
+          isOpen={isExportOpen}
+          onClose={() => setIsExportOpen(false)}
+          data={exportData}
+          type={activeTab}
+        />
+        <PerformanceMonitor
+          isVisible={showPerformance}
+          onToggle={() => setShowPerformance(!showPerformance)}
+        />
+        <Analytics
+          isOpen={isAnalyticsOpen}
+          onClose={() => setIsAnalyticsOpen(false)}
+        />
       </Suspense>
+
+      {/* Performance Toggle - Hidden on mobile */}
+      <button
+        onClick={() => setShowPerformance(!showPerformance)}
+        className="hidden lg:block fixed bottom-6 left-6 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-full shadow-lg z-40"
+        title="Toggle Performance Monitor"
+      >
+        📊
+      </button>
 
       {showWelcomeTour && (
         <WelcomeTour onComplete={async () => {
@@ -229,22 +271,26 @@ function App() {
             <ChatHistoryProvider>
               <SimulatorProvider>
                 <ToastProvider>
-                  <BrowserRouter>
-                  <Routes>
-                    <Route path="/login" element={
-                      <AuthRedirect>
-                        <Login />
-                      </AuthRedirect>
-                    } />
-                    <Route path="/verify" element={<VerificationPage />} />
-                    <Route path="/lab" element={
-                      <ProtectedRoute>
-                        <Lab />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/" element={<Navigate to="/lab" />} />
-                  </Routes>
-                  </BrowserRouter>
+                  <SettingsProvider>
+                    <DemoProvider>
+                      <BrowserRouter>
+                        <Routes>
+                          <Route path="/login" element={
+                            <AuthRedirect>
+                              <Login />
+                            </AuthRedirect>
+                          } />
+                          <Route path="/verify" element={<VerificationPage />} />
+                          <Route path="/lab" element={
+                            <ProtectedRoute>
+                              <Lab />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/" element={<Navigate to="/lab" />} />
+                        </Routes>
+                      </BrowserRouter>
+                    </DemoProvider>
+                  </SettingsProvider>
                 </ToastProvider>
               </SimulatorProvider>
             </ChatHistoryProvider>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChemicalFormula } from './ChemicalFormula';
 
 interface ReactionResultProps {
     product: {
@@ -72,9 +73,9 @@ export const ReactionResult = ({ product, onVisualize }: ReactionResultProps) =>
                     {showFormula && (
                         <div>
                             <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Chemical Formula:</p>
-                            <p className="text-lg font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-white dark:bg-gray-800 px-3 py-1 rounded-lg border">
-                                {product.formula}
-                            </p>
+                            <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400 bg-white dark:bg-gray-800 px-3 py-1 rounded-lg border">
+                                <ChemicalFormula formula={product.formula} />
+                            </div>
                         </div>
                     )}
                 </div>
