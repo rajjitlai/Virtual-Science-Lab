@@ -318,14 +318,14 @@ src/
 
 <div align="center">
 
-![Virtual Science Lab](https://img.shields.io/badge/Virtual%20Science%20Lab-v1.0.0-blue?style=for-the-badge)
+![Virtual Science Lab](https://img.shields.io/badge/Virtual%20Science%20Lab-v1.0.1-blue?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 **An interactive, browser-based science playground for learning chemistry and physics through hands-on experiments.**
 
-[Demo](https://virtual-science-lab.vercel.app) · [Report Bug](https://github.com/yourusername/virtual-science-lab/issues) · [Request Feature](https://github.com/yourusername/virtual-science-lab/issues)
+[Demo](https://virtual-science-lab.appwrite.network) · [Report Bug](https://github.com/rajjitlai/Virtual-Science-Lab/issues) · [Request Feature](https://github.com/rajjitlai/Virtual-Science-Lab/issues)
 
 </div>
 
@@ -865,7 +865,7 @@ Distributed under the MIT License. See `LICENSE` file for more information.
 ```
 MIT License
 
-Copyright (c) 2025 Virtual Science Lab
+Copyright (c) 2025 Rajjit Laishram
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -916,15 +916,15 @@ SOFTWARE.
 
 ## 📞 Contact
 
-**Project Creator** - Your Name
+**Project Creator** - Rajjit Laishram
 
-- Email: <your.email@example.com>
-- Twitter: [@yourusername](https://twitter.com/yourusername)
-- LinkedIn: [Your Name](https://linkedin.com/in/yourusername)
+- Email: <rajjitlai@mail.com>
+- Twitter: [@rajjitlai](https://twitter.com/rajjitlai)
+- LinkedIn: [Rajjit Laishram](https://linkedin.com/in/rajjitlaishram)
 
-**Project Link**: [https://github.com/yourusername/virtual-science-lab](https://github.com/yourusername/virtual-science-lab)
+**Project Link**: [https://github.com/rajjitlai/Virtual-Science-Lab](https://github.com/rajjitlai/Virtual-Science-Lab)
 
-**Live Demo**: [https://virtual-science-lab.vercel.app](https://virtual-science-lab.vercel.app)
+**Live Demo**: [https://virtual-science-lab.appwrite.network](https://virtual-science-lab.appwrite.network)
 
 ---
 
