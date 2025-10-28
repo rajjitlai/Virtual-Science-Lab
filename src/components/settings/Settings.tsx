@@ -4,6 +4,10 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAppwrite } from '../../contexts/AppwriteContext';
 import { DEFAULT_SETTINGS } from '../../types/settings';
 import type { UserSettings } from '../../types/settings';
+import { Terms } from '../common/Terms';
+import { Privacy } from '../common/Privacy';
+
+const APP_VERSION = '1.0.1';
 
 interface SettingsProps {
     isOpen: boolean;
@@ -17,7 +21,9 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
     const { theme, setTheme } = useTheme();
     const { getUserSettings, saveUserSettings } = useAppwrite();
     const [settings, setSettings] = useState<UserSettings>(initialSettings || DEFAULT_SETTINGS);
-    const [activeSection, setActiveSection] = useState<'profile' | 'appearance' | 'preferences'>('profile');
+    const [activeSection, setActiveSection] = useState<'profile' | 'appearance' | 'preferences' | 'about'>('profile');
+    const [showTerms, setShowTerms] = useState(false);
+    const [showPrivacy, setShowPrivacy] = useState(false);
 
     useEffect(() => {
         // If initialSettings is provided, use it
@@ -25,7 +31,7 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
             setSettings(initialSettings);
             return;
         }
-        
+
         // Otherwise, load settings from Appwrite
         const loadSettings = async () => {
             try {
@@ -43,7 +49,7 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
 
     const saveSettings = async (newSettings: UserSettings) => {
         setSettings(newSettings);
-        
+
         // Try to save to Appwrite first
         try {
             await saveUserSettings(newSettings);
@@ -52,7 +58,7 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
             // If Appwrite fails, fallback to localStorage
             localStorage.setItem('userSettings', JSON.stringify(newSettings));
         }
-        
+
         // Also call the onSaveSettings prop if provided
         if (onSaveSettings) {
             try {
@@ -89,8 +95,8 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                         <button
                             onClick={() => setActiveSection('profile')}
                             className={`w-full text-left px-4 py-3 rounded-lg transition-all ${activeSection === 'profile'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
                                 }`}
                         >
                             👤 Profile
@@ -98,8 +104,8 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                         <button
                             onClick={() => setActiveSection('appearance')}
                             className={`w-full text-left px-4 py-3 rounded-lg transition-all ${activeSection === 'appearance'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
                                 }`}
                         >
                             🎨 Appearance
@@ -107,11 +113,20 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                         <button
                             onClick={() => setActiveSection('preferences')}
                             className={`w-full text-left px-4 py-3 rounded-lg transition-all ${activeSection === 'preferences'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
                                 }`}
                         >
                             ⚙️ Preferences
+                        </button>
+                        <button
+                            onClick={() => setActiveSection('about')}
+                            className={`w-full text-left px-4 py-3 rounded-lg transition-all ${activeSection === 'about'
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800'
+                                }`}
+                        >
+                            ℹ️ About
                         </button>
                     </nav>
 
@@ -196,8 +211,8 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                                             <button
                                                 onClick={() => handleThemeChange('light')}
                                                 className={`p-4 border-2 rounded-lg transition-all ${theme === 'light'
-                                                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
-                                                        : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
+                                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
+                                                    : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
                                                     }`}
                                             >
                                                 <div className="text-4xl mb-2">☀️</div>
@@ -208,8 +223,8 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                                             <button
                                                 onClick={() => handleThemeChange('dark')}
                                                 className={`p-4 border-2 rounded-lg transition-all ${theme === 'dark'
-                                                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
-                                                        : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
+                                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
+                                                    : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
                                                     }`}
                                             >
                                                 <div className="text-4xl mb-2">🌙</div>
@@ -220,8 +235,8 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                                             <button
                                                 onClick={() => handleThemeChange('system')}
                                                 className={`p-4 border-2 rounded-lg transition-all ${theme === 'system'
-                                                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
-                                                        : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
+                                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
+                                                    : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
                                                     }`}
                                             >
                                                 <div className="text-4xl mb-2">💻</div>
@@ -356,8 +371,8 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                                             <button
                                                 onClick={() => saveSettings({ ...settings, defaultLab: 'chemistry' })}
                                                 className={`flex-1 p-4 border-2 rounded-lg transition-all ${settings.defaultLab === 'chemistry'
-                                                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
-                                                        : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
+                                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
+                                                    : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
                                                     }`}
                                             >
                                                 <div className="text-3xl mb-2">🧪</div>
@@ -366,8 +381,8 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                                             <button
                                                 onClick={() => saveSettings({ ...settings, defaultLab: 'physics' })}
                                                 className={`flex-1 p-4 border-2 rounded-lg transition-all ${settings.defaultLab === 'physics'
-                                                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
-                                                        : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
+                                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
+                                                    : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
                                                     }`}
                                             >
                                                 <div className="text-3xl mb-2">⚡</div>
@@ -379,8 +394,108 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                             </div>
                         </div>
                     )}
+
+                    {/* About Section */}
+                    {activeSection === 'about' && (
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+                                    About Virtual Science Lab
+                                </h3>
+
+                                <div className="space-y-6">
+                                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                                        <h4 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
+                                            🧪 Welcome to Virtual Science Lab
+                                        </h4>
+                                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                                            An innovative educational platform that brings interactive virtual laboratories to your fingertips.
+                                            Explore chemistry and physics experiments in a safe, engaging, and AI-powered environment.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                            <h5 className="font-semibold text-gray-800 dark:text-white mb-2">📦 Version</h5>
+                                            <p className="text-indigo-600 dark:text-indigo-400 font-bold text-xl">
+                                                {APP_VERSION}
+                                            </p>
+                                        </div>
+                                        <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                            <h5 className="font-semibold text-gray-800 dark:text-white mb-2">🎓 Purpose</h5>
+                                            <p className="text-gray-700 dark:text-gray-300">
+                                                Educational platform for virtual experiments
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                                        <h5 className="font-semibold text-gray-800 dark:text-white mb-3">✨ Key Features</h5>
+                                        <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+                                            <li className="flex items-start">
+                                                <span className="mr-2">🧬</span>
+                                                <span>Interactive Chemistry Lab with virtual beakers, reactions, and AI assistance</span>
+                                            </li>
+                                            <li className="flex items-start">
+                                                <span className="mr-2">⚡</span>
+                                                <span>Physics Lab with simulations and interactive demonstrations</span>
+                                            </li>
+                                            <li className="flex items-start">
+                                                <span className="mr-2">🤖</span>
+                                                <span>AI-powered educational assistant for learning support</span>
+                                            </li>
+                                            <li className="flex items-start">
+                                                <span className="mr-2">💾</span>
+                                                <span>Save and export your experiments for future reference</span>
+                                            </li>
+                                            <li className="flex items-start">
+                                                <span className="mr-2">📊</span>
+                                                <span>Track your learning progress and analytics</span>
+                                            </li>
+                                            <li className="flex items-start">
+                                                <span className="mr-2">🎨</span>
+                                                <span>Customizable themes: Light, Dark, or System</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500">
+                                        <h5 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">ℹ️ Note</h5>
+                                        <p className="text-blue-700 dark:text-blue-300 text-sm">
+                                            This platform is for educational purposes only. Virtual experiments are simulations designed
+                                            for learning and should not replace proper laboratory safety practices in physical labs.
+                                        </p>
+                                    </div>
+
+                                    <div className="flex gap-4 pt-4">
+                                        <button
+                                            onClick={() => setShowTerms(true)}
+                                            className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-4 py-3 rounded-lg font-semibold transition-all"
+                                        >
+                                            📄 Terms & Conditions
+                                        </button>
+                                        <button
+                                            onClick={() => setShowPrivacy(true)}
+                                            className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-4 py-3 rounded-lg font-semibold transition-all"
+                                        >
+                                            🔒 Privacy Policy
+                                        </button>
+                                    </div>
+
+                                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            © 2025 Virtual Science Lab. All rights reserved.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
+
+            <Terms isOpen={showTerms} onClose={() => setShowTerms(false)} />
+            <Privacy isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
         </div>
     );
 };

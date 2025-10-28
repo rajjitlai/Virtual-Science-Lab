@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Terms } from '../common/Terms';
+import { Privacy } from '../common/Privacy';
 
 interface AuthError {
     message: string;
@@ -14,6 +16,8 @@ export const Login = () => {
     const [name, setName] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [showTerms, setShowTerms] = useState(false);
+    const [showPrivacy, setShowPrivacy] = useState(false);
 
     const { login, register, sendVerificationEmail, isEmailVerified, user } = useAuth();
     const navigate = useNavigate();
@@ -136,7 +140,32 @@ export const Login = () => {
                         {isLogin ? 'Need an account? Register' : 'Have an account? Login'}
                     </button>
                 </div>
+
+                {/* Terms and Privacy Links */}
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        By using this platform, you agree to our
+                    </p>
+                    <div className="flex justify-center gap-4">
+                        <button
+                            onClick={() => setShowTerms(true)}
+                            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                        >
+                            Terms & Conditions
+                        </button>
+                        <span className="text-xs text-gray-400">|</span>
+                        <button
+                            onClick={() => setShowPrivacy(true)}
+                            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                        >
+                            Privacy Policy
+                        </button>
+                    </div>
+                </div>
             </div>
+
+            <Terms isOpen={showTerms} onClose={() => setShowTerms(false)} />
+            <Privacy isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
         </div>
     );
 };

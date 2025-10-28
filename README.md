@@ -302,7 +302,7 @@ src/
 
 ### Version History
 
-- **v1.0.0** (2024-01) - Initial release
+- **v1.0.0** (2025-10) - Initial release
   - Chemistry Lab
   - Physics Lab
   - AI Assistant
@@ -779,7 +779,7 @@ virtual-science-lab/
 
 ### Version History
 
-- **v1.0.0** (2024-01) - Initial release
+- **v1.0.0** (2025-10) - Initial release
   - Chemistry Lab
   - Physics Lab
   - AI Assistant
@@ -856,7 +856,7 @@ Distributed under the MIT License. See `LICENSE` file for more information.
 ```
 MIT License
 
-Copyright (c) 2024 Virtual Science Lab
+Copyright (c) 2025 Virtual Science Lab
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
