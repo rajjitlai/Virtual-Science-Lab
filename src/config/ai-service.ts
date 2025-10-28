@@ -48,12 +48,18 @@ export const callGemmaModel = async (prompt: string) => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-        const response = await fetch('/api/openrouter/api/v1/chat/completions', {
+        // Use Vite proxy in dev, direct OpenRouter URL in production
+        const baseUrl = import.meta.env.DEV
+            ? '/api/openrouter/api/v1'
+            : 'https://openrouter.ai/api/v1';
+
+        const response = await fetch(`${baseUrl}/chat/completions`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
-                'HTTP-Referer': window.location.origin, // Optional, for openrouter dashboard
+                'HTTP-Referer': window.location.origin,
+                'X-Title': 'Virtual Science Lab',
             },
             body: JSON.stringify({
                 model: 'google/gemma-3n-e2b-it:free',
@@ -71,9 +77,14 @@ export const callGemmaModel = async (prompt: string) => {
         // Log response status for debugging
         console.log(`API response status: ${response.status}`);
 
-        if (!response.ok) {
+        // Ensure JSON; if HTML is returned (e.g., SPA index.html), give a clear error
+        const contentType = response.headers.get('content-type') || '';
+        if (!response.ok || !contentType.includes('application/json')) {
             const errorText = await response.text();
             console.error(`API error response: ${errorText}`);
+            if (!contentType.includes('application/json')) {
+                throw new Error('Unexpected non-JSON response (likely HTML). In production, ensure requests hit https://openrouter.ai/api/v1 not the dev proxy.');
+            }
             throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
         }
 
