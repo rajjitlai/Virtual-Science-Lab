@@ -412,6 +412,8 @@ Virtual Science Lab is an educational web application that brings science experi
 - **User Profile**: View account info and stats
 - **Preferences**: Toggle notifications, sound effects, auto-save
 - **Default Lab**: Choose startup screen
+ - **About Panel**: View app version and developer link (Developed by [Rajjit Laishram](https://rajjitlaishram.netlify.app))
+ - **Legal**: Access Terms & Conditions and Privacy Policy (also available on Login)
 
 ### 🔐 Authentication
 
@@ -596,6 +598,8 @@ VITE_OPENROUTER_API_KEY=your-openrouter-api-key-here
 - Switch between light/dark/system theme
 - Toggle preferences (notifications, sound effects)
 - Choose your default lab
+ - Open the **About** section to see version and developer info
+ - Review **Terms & Conditions** and **Privacy Policy** from About (also available on the Login page)
 
 ---
 
@@ -759,6 +763,11 @@ virtual-science-lab/
 ## 🌐 Deployment
 
 ### Deploy to Vercel Appwrite
+
+## 📜 Legal
+
+- **Terms & Conditions** and **Privacy Policy** are accessible from the Login page footer and from **Settings → About** inside the app.
+- These pages outline usage terms and how data (including AI interactions via Google Generative AI and Appwrite storage) is handled.
 
 ## 🗺️ Roadmap
 
