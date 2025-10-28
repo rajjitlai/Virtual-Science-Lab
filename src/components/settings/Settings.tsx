@@ -420,6 +420,17 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                                             <p className="text-indigo-600 dark:text-indigo-400 font-bold text-xl">
                                                 {APP_VERSION}
                                             </p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                                Developed by:{' '}
+                                                <a
+                                                    href="https://rajjitlaishram.netlify.app"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                                                >
+                                                    Rajjit Laishram
+                                                </a>
+                                            </p>
                                         </div>
                                         <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                                             <h5 className="font-semibold text-gray-800 dark:text-white mb-2">🎓 Purpose</h5>

@@ -9,7 +9,7 @@ interface ChatHistoryProps {
 }
 
 export const ChatHistory = ({ isOpen, onClose, onContinueChat }: ChatHistoryProps) => {
-    const { sessions, deleteSession, clearAllSessions, isCloudStorage } = useChatHistory();
+    const { sessions, deleteSession, clearAllSessions } = useChatHistory();
     const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -94,8 +94,8 @@ export const ChatHistory = ({ isOpen, onClose, onContinueChat }: ChatHistoryProp
                                     key={session.id}
                                     onClick={() => setSelectedSession(session)}
                                     className={`p-4 rounded-lg cursor-pointer transition-all ${selectedSession?.id === session.id
-                                            ? 'bg-indigo-100 dark:bg-indigo-900 border-2 border-indigo-500'
-                                            : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-2 border-transparent'
+                                        ? 'bg-indigo-100 dark:bg-indigo-900 border-2 border-indigo-500'
+                                        : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-2 border-transparent'
                                         }`}
                                 >
                                     <div className="flex justify-between items-start mb-2">
@@ -152,8 +152,8 @@ export const ChatHistory = ({ isOpen, onClose, onContinueChat }: ChatHistoryProp
                                     >
                                         <div
                                             className={`max-w-[80%] rounded-2xl p-4 ${message.role === 'user'
-                                                    ? 'bg-indigo-600 text-white'
-                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'
+                                                ? 'bg-indigo-600 text-white'
+                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'
                                                 }`}
                                         >
                                             <p className="whitespace-pre-wrap">{message.content}</p>

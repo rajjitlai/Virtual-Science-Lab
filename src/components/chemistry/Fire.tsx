@@ -71,7 +71,7 @@ export const Fire = ({ intensity, position = [0, 0, 0], chemicalName }: FireProp
     }, [intensity, fireColor]);
 
     // Animate fire particles with more realistic physics
-    useFrame((state, delta) => {
+    useFrame((_, delta) => {
         if (!fireGroupRef.current || particles.count === 0) return;
         timeRef.current += delta;
 

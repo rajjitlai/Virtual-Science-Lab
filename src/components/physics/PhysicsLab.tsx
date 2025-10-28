@@ -139,7 +139,7 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                             <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                                 <span className="text-2xl">🔬</span>
                                 Physics Laboratory
-                </h2>
+                            </h2>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
@@ -149,13 +149,13 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                         </div>
                     </div>
 
-                {/* Gravity Controls */}
+                    {/* Gravity Controls */}
                     <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900 dark:to-blue-900 p-4 rounded-lg mb-4">
                         <div className="flex items-center justify-between mb-3">
                             <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
                                 <span className="text-xl">🌍</span>
                                 Gravity Settings
-                    </h3>
+                            </h3>
                             <button
                                 onClick={() => setShowAdvanced(!showAdvanced)}
                                 className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium px-2 py-1 rounded hover:bg-indigo-100 dark:hover:bg-indigo-800 transition-colors"
@@ -164,24 +164,24 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                             </button>
                         </div>
 
-                    <div className="space-y-4">
+                        <div className="space-y-4">
                             {/* Gravity Slider */}
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Gravity Strength
-                            </label>
+                                    </label>
                                     <span className="text-base font-bold text-indigo-600 dark:text-indigo-400">
                                         {gravity.toFixed(2)}g
                                     </span>
                                 </div>
                                 <div className="relative">
-                            <input
-                                type="range"
-                                min="0"
-                                max="3"
-                                step="0.1"
-                                value={gravity}
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="3"
+                                        step="0.1"
+                                        value={gravity}
                                         onChange={(e) => {
                                             setGravity(parseFloat(e.target.value));
                                             setSelectedPreset('Custom');
@@ -194,13 +194,13 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                                         <span>3g</span>
                                     </div>
                                 </div>
-                        </div>
+                            </div>
 
                             {/* Preset Buttons */}
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {presets.map((preset) => (
-                                <button
-                                    key={preset.name}
+                                {presets.map((preset) => (
+                                    <button
+                                        key={preset.name}
                                         onClick={() => handlePresetChange(preset)}
                                         className={`p-3 rounded-lg font-medium transition-all duration-200 ${selectedPreset === preset.name
                                             ? `${preset.color} text-white shadow-md`
@@ -212,9 +212,9 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                                             <span className="font-semibold text-sm">{preset.name}</span>
                                         </div>
                                         <p className="text-xs opacity-80">{preset.description}</p>
-                                </button>
-                            ))}
-                        </div>
+                                    </button>
+                                ))}
+                            </div>
 
                             {/* Advanced Settings */}
                             {showAdvanced && (
@@ -252,8 +252,8 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                                     </div>
                                 </div>
                             )}
+                        </div>
                     </div>
-                </div>
 
                     {/* Real-time Stats Display */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -265,9 +265,9 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                                 <div>
                                     <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Objects</p>
                                     <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
-                            {stats.objects}
-                        </p>
-                    </div>
+                                        {stats.objects}
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
@@ -311,15 +311,13 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                                     </p>
                                 </div>
                             </div>
+                        </div>
                     </div>
-                </div>
 
-                {/* Physics Engine */}
+                    {/* Physics Engine */}
                     <PhysicsEngine
                         gravity={gravity}
                         onStatsUpdate={setStats}
-                        airResistance={airResistance}
-                        friction={friction}
                         demoObjects={demoObjects}
                     />
                 </div>
@@ -355,7 +353,7 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                     </div>
                     <div className="space-y-3">
                         <h4 className="text-base font-semibold text-gray-800 dark:text-white mb-2">Advanced Features</h4>
-                <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+                        <ul className="space-y-2 text-gray-700 dark:text-gray-300">
                             <li className="flex items-start gap-2">
                                 <span className="text-purple-500 text-sm">⚙️</span>
                                 <span className="text-sm">Enable advanced settings for air resistance and friction</span>
@@ -372,7 +370,7 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                                 <span className="text-purple-500 text-sm">🎮</span>
                                 <span className="text-sm">Use mouse to rotate and zoom the 3D view</span>
                             </li>
-                </ul>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -410,7 +408,7 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                         <div className="flex items-center gap-2 mb-2">
                             <span className="text-lg">🏀</span>
                             <h4 className="text-base font-bold text-purple-800 dark:text-purple-200">Elastic Collisions</h4>
-                    </div>
+                        </div>
                         <p className="text-purple-700 dark:text-purple-300 text-xs">
                             Balls bounce back because they transfer kinetic energy during collisions.
                             The restitution value determines how bouncy objects are.
@@ -421,7 +419,7 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                         <div className="flex items-center gap-2 mb-2">
                             <span className="text-lg">🌪️</span>
                             <h4 className="text-base font-bold text-orange-800 dark:text-orange-200">Terminal Velocity</h4>
-                    </div>
+                        </div>
                         <p className="text-orange-700 dark:text-orange-300 text-xs">
                             Objects eventually reach a maximum falling speed due to air resistance.
                             Try adjusting the air resistance setting to see the effect.

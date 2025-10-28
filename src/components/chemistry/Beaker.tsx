@@ -48,9 +48,7 @@ export const Beaker = ({ position, liquidColor, liquidLevel, showBubbles, fireIn
         if (glassRef.current) glassRef.current.renderOrder = 3;
     });
 
-    // Determine wrapper color based on liquid presence
-    const wrapperColor = liquidLevel > 0.5 ? liquidColor : "#aaaaaa";
-    const wrapperOpacity = 0.03; // keep extremely subtle so glass stays clear
+    // Subtle wrapper animation handled in useFrame above
 
     return (
         <group position={position}>

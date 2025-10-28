@@ -23,7 +23,7 @@ const AnimatedNode = ({ position, chemical, delay, isActive }: AnimatedNodeProps
     const meshRef = useRef<THREE.Mesh>(null);
     const [time, setTime] = useState(0);
 
-    useFrame((state, delta) => {
+    useFrame((_, delta) => {
         setTime(prev => prev + delta);
 
         if (meshRef.current) {
@@ -162,7 +162,7 @@ const ProductNode = ({ position, product, progress }: ProductNodeProps) => {
     const meshRef = useRef<THREE.Mesh>(null);
     const [time, setTime] = useState(0);
 
-    useFrame((state, delta) => {
+    useFrame((_, delta) => {
         setTime(prev => prev + delta);
 
         if (meshRef.current) {

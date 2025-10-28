@@ -6,14 +6,15 @@ import { databases } from '../config/appwrite';
 import { ID, Query } from 'appwrite';
 
 // Appwrite document type for chat sessions
-interface AppwriteChatDocument {
-  $id: string;
-  $createdAt: string; // ISO date string
-  userId: string;
-  title: string;
-  context: string;
-  messages: string; // JSON stringified array
-}
+// Appwrite document type for chat sessions (kept for reference)
+// interface AppwriteChatDocument {
+//   $id: string;
+//   $createdAt: string; // ISO date string
+//   userId: string;
+//   title: string;
+//   context: string;
+//   messages: string; // JSON stringified array
+// }
 
 interface ChatHistoryContextType {
     sessions: ChatSession[];
@@ -32,8 +33,8 @@ const ChatHistoryProviderComponent = ({ children }: { children: ReactNode }) => 
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     // Check if Appwrite chat collection is configured
-    const isCloudStorage = !!import.meta.env.VITE_APPWRITE_DATABASE_ID && 
-                          !!import.meta.env.VITE_APPWRITE_CHAT_COLLECTION_ID;
+    const isCloudStorage = !!import.meta.env.VITE_APPWRITE_DATABASE_ID &&
+        !!import.meta.env.VITE_APPWRITE_CHAT_COLLECTION_ID;
     const [lastLoadedUser, setLastLoadedUser] = useState<string | null>(null);
 
     // Load sessions from Appwrite on mount
@@ -50,7 +51,7 @@ const ChatHistoryProviderComponent = ({ children }: { children: ReactNode }) => 
 
     const loadSessionsFromAppwrite = async () => {
         if (!isCloudStorage || !user) return;
-        
+
         setIsLoading(true);
         try {
             const response = await databases.listDocuments(
@@ -142,16 +143,16 @@ const ChatHistoryProviderComponent = ({ children }: { children: ReactNode }) => 
                     Query.equal('userId', user.$id)
                 ]
             );
-            
+
             // Delete each document
-            await Promise.all(response.documents.map(doc => 
+            await Promise.all(response.documents.map(doc =>
                 databases.deleteDocument(
                     import.meta.env.VITE_APPWRITE_DATABASE_ID,
                     import.meta.env.VITE_APPWRITE_CHAT_COLLECTION_ID,
                     doc.$id
                 )
             ));
-            
+
             setSessions([]);
         } catch (error) {
             console.error('Error clearing all sessions from Appwrite:', error);
@@ -160,11 +161,11 @@ const ChatHistoryProviderComponent = ({ children }: { children: ReactNode }) => 
     };
 
     return (
-        <ChatHistoryContext.Provider value={{ 
-            sessions, 
-            saveSession, 
-            deleteSession, 
-            clearAllSessions, 
+        <ChatHistoryContext.Provider value={{
+            sessions,
+            saveSession,
+            deleteSession,
+            clearAllSessions,
             isCloudStorage,
             isLoading
         }}>

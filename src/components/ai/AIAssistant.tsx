@@ -21,7 +21,7 @@ interface APIError {
 }
 
 export const AIAssistant = ({ isOpen, onClose, context, initialMessages, isContinuedChat }: AIAssistantProps) => {
-    const { saveSession, isCloudStorage } = useChatHistory();
+    const { saveSession } = useChatHistory();
     const { triggerChemicalReaction } = useSimulator();
     const [messages, setMessages] = useState<Message[]>(initialMessages && initialMessages.length > 0
         ? initialMessages
@@ -239,7 +239,7 @@ Assistant:`
 
             // Check for code blocks (```)
             if (line.startsWith('```')) {
-                const lang = line.substring(3).trim();
+                // language tag intentionally ignored
                 const codeLines = [];
                 let j = i + 1;
 

@@ -18,7 +18,7 @@ export const ChemistryLab = ({ demoScenario }: ChemistryLabProps) => {
     const { loadMixtures, saveMixture } = useAppwrite();
     const { showToast } = useToast();
     const { pendingChemicals, clearPendingChemicals } = useSimulator();
-    const { startChemistryDemo, stopDemo, isDemoRunning, getDemoChemicals } = useDemo();
+    const { startChemistryDemo, isDemoRunning, getDemoChemicals } = useDemo();
     const [selectedChemicals, setSelectedChemicals] = useState<Chemical[]>([]);
     const [liquidColor, setLiquidColor] = useState('#00aaff');
     const [liquidLevel, setLiquidLevel] = useState(0.25);
@@ -68,7 +68,7 @@ export const ChemistryLab = ({ demoScenario }: ChemistryLabProps) => {
 
                 // Add chemicals one by one with delays for visual effect
                 let delay = 1000;
-                demoChemicals.forEach((chemical, index) => {
+                demoChemicals.forEach((chemical) => {
                     setTimeout(() => {
                         setSelectedChemicals(prev => [...prev, chemical]);
 

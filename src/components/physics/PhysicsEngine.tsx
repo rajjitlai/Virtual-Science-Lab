@@ -1,22 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { useEffect, useState } from 'react';
+import { Canvas } from '@react-three/fiber';
 import { Physics, useBox, useSphere, usePlane } from '@react-three/cannon';
 import { OrbitControls, Environment } from '@react-three/drei';
-import * as THREE from 'three';
 import { PHYSICS_OBJECTS } from '../../types/physics';
 import type { PhysicsObject } from '../../types/physics';
 
 interface PhysicsEngineProps {
     gravity: number;
     onStatsUpdate: (stats: { objects: number; kinetic: number; potential: number; total: number }) => void;
-    airResistance?: number;
-    friction?: number;
     demoObjects?: any[];
 }
 
 // 3D Physics Objects
 const PhysicsBall = ({ position, color, size, mass, restitution }: { position: [number, number, number], color: string, size: number, mass: number, restitution: number }) => {
-    const [ref, api] = useSphere(() => ({
+    const [ref] = useSphere(() => ({
         mass,
         position,
         args: [size],
@@ -31,17 +28,18 @@ const PhysicsBall = ({ position, color, size, mass, restitution }: { position: [
     );
 };
 
-const PhysicsBox = ({ position, color, size, mass, restitution }: { position: [number, number, number], color: string, size: number, mass: number, restitution: number }) => {
-    const [ref, api] = useBox(() => ({
+const PhysicsBox = ({ position, color, size, mass, restitution }: { position: [number, number, number], color: string, size: number | number[], mass: number, restitution: number }) => {
+    const sizeArray = Array.isArray(size) ? size : [size, size, size];
+    const [ref] = useBox(() => ({
         mass,
         position,
-        args: [size, size, size],
+        args: sizeArray as [number, number, number],
         material: { restitution },
     }));
 
     return (
         <mesh ref={ref} castShadow>
-            <boxGeometry args={[size, size, size]} />
+            <boxGeometry args={[sizeArray[0], sizeArray[1], sizeArray[2]]} />
             <meshStandardMaterial color={color} />
         </mesh>
     );
@@ -77,7 +75,7 @@ const Platform = ({ position, size }: { position: [number, number, number], size
     );
 };
 
-export const PhysicsEngine = ({ gravity, onStatsUpdate, airResistance = 0.1, friction = 0.3, demoObjects = [] }: PhysicsEngineProps) => {
+export const PhysicsEngine = ({ gravity, onStatsUpdate, demoObjects = [] }: PhysicsEngineProps) => {
     const [objects, setObjects] = useState<Array<PhysicsObject & { id: string, position: [number, number, number] }>>([]);
     const [isRunning, setIsRunning] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
@@ -177,7 +175,7 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate, airResistance = 0.1, fri
 
                             <Physics
                                 gravity={[0, -gravity * 9.81, 0]}
-                                paused={!isRunning}
+                                isPaused={!isRunning}
                                 defaultContactMaterial={{ restitution: 0.3 }}
                             >
                                 <Ground />

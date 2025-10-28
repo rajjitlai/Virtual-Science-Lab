@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Mixture } from '../types/chemistry';
 import type { UserSettings } from '../types/settings';
@@ -7,23 +7,25 @@ import { databases } from '../config/appwrite';
 import { ID, Query } from 'appwrite';
 
 // Appwrite document types that reflect the actual structure of documents in the database
-interface AppwriteMixtureDocument {
-  $id: string;
-  $createdAt: string; // ISO date string
-  userId: string;
-  name: string;
-  chemicals: string; // JSON stringified array
-  color: string;
-}
+// Document shape for mixtures (for reference only)
+// interface AppwriteMixtureDocument {
+//   $id: string;
+//   $createdAt: string; // ISO date string
+//   userId: string;
+//   name: string;
+//   chemicals: string; // JSON stringified array
+//   color: string;
+// }
 
-interface AppwriteUserDataDocument {
-  $id: string;
-  $createdAt: string; // ISO date string
-  userId: string;
-  type: 'tour' | 'settings';
-  isTourShown?: boolean;
-  settings?: string; // JSON stringified object
-}
+// Document shape for user data (for reference only)
+// interface AppwriteUserDataDocument {
+//   $id: string;
+//   $createdAt: string; // ISO date string
+//   userId: string;
+//   type: 'tour' | 'settings';
+//   isTourShown?: boolean;
+//   settings?: string; // JSON stringified object
+// }
 
 interface AppwriteContextType {
     isCloudStorage: boolean;
@@ -43,11 +45,11 @@ const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined
 const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
     // Check if all required Appwrite environment variables are set
-    const isCloudStorage = !!import.meta.env.VITE_APPWRITE_DATABASE_ID && 
-                          !!import.meta.env.VITE_APPWRITE_CHAT_COLLECTION_ID && 
-                          !!import.meta.env.VITE_APPWRITE_MIXTURES_COLLECTION_ID && 
-                          !!import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID;
-    
+    const isCloudStorage = !!import.meta.env.VITE_APPWRITE_DATABASE_ID &&
+        !!import.meta.env.VITE_APPWRITE_CHAT_COLLECTION_ID &&
+        !!import.meta.env.VITE_APPWRITE_MIXTURES_COLLECTION_ID &&
+        !!import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID;
+
     // Ensure Appwrite collections exist
     useEffect(() => {
         if (isCloudStorage) {
@@ -148,7 +150,7 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
             );
 
             // Delete each document
-            await Promise.all(response.documents.map(doc => 
+            await Promise.all(response.documents.map(doc =>
                 databases.deleteDocument(
                     import.meta.env.VITE_APPWRITE_DATABASE_ID,
                     import.meta.env.VITE_APPWRITE_MIXTURES_COLLECTION_ID,
@@ -308,11 +310,11 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <AppwriteContext.Provider value={{ 
-            isCloudStorage, 
-            saveMixture, 
-            loadMixtures, 
-            deleteMixture, 
+        <AppwriteContext.Provider value={{
+            isCloudStorage,
+            saveMixture,
+            loadMixtures,
+            deleteMixture,
             clearAllMixtures,
             getTourStatus,
             setTourStatus,

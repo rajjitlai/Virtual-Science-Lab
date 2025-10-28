@@ -21,7 +21,7 @@ export const PerformanceMonitor = ({ isVisible, onToggle }: PerformanceMonitorPr
     });
     const frameCount = useRef(0);
     const lastTime = useRef(performance.now());
-    const animationId = useRef<number>();
+    const animationId = useRef<number | undefined>(undefined);
 
     useEffect(() => {
         if (!isVisible) return;

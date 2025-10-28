@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSettings } from '../../contexts/SettingsContext';
+// import { useSettings } from '../../contexts/SettingsContext';
 import { useToast } from '../../contexts/ToastContext';
 
 interface DemoModeProps {
@@ -52,7 +52,7 @@ const DEMO_SCENARIOS = {
 };
 
 export const DemoMode = ({ isOpen, onClose, onStartDemo }: DemoModeProps) => {
-    const { settings } = useSettings();
+    // settings currently unused but kept for potential future enhancements
     const { showToast } = useToast();
     const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
     const [isRunning, setIsRunning] = useState(false);

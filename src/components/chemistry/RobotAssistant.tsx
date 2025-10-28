@@ -25,7 +25,7 @@ export const RobotAssistant = ({
     const rightArmRef = useRef<THREE.Group>(null);
     const [time, setTime] = useState(0);
 
-    useFrame((state, delta) => {
+    useFrame((_, delta) => {
         if (!robotGroupRef.current) return;
         setTime((prev) => prev + delta);
 
