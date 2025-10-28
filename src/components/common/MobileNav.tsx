@@ -4,7 +4,6 @@ interface MobileNavProps {
     activeTab: 'chemistry' | 'physics';
     onTabChange: (tab: 'chemistry' | 'physics') => void;
     onDemoClick: () => void;
-    onExportClick: () => void;
     onHistoryClick: () => void;
     onSettingsClick: () => void;
     onAnalyticsClick: () => void;
@@ -15,7 +14,6 @@ export const MobileNav = ({
     activeTab,
     onTabChange,
     onDemoClick,
-    onExportClick,
     onHistoryClick,
     onSettingsClick,
     onAnalyticsClick,
@@ -83,15 +81,6 @@ export const MobileNav = ({
                             </button>
                             <button
                                 onClick={() => {
-                                    onExportClick();
-                                    setIsMenuOpen(false);
-                                }}
-                                className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-medium"
-                            >
-                                📤 Export
-                            </button>
-                            <button
-                                onClick={() => {
                                     onHistoryClick();
                                     setIsMenuOpen(false);
                                 }}
@@ -145,13 +134,6 @@ export const MobileNav = ({
                             title="Demo Mode"
                         >
                             🎬
-                        </button>
-                        <button
-                            onClick={onExportClick}
-                            className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-2xl"
-                            title="Export"
-                        >
-                            📤
                         </button>
                         <button
                             onClick={onHistoryClick}

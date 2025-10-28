@@ -3,6 +3,7 @@ import { callGemmaModel, SYSTEM_PROMPT } from '../../config/ai-service';
 import type { Message } from '../../types/chat';
 import { useChatHistory } from '../../contexts/ChatHistoryContext';
 import { useSimulator } from '../../contexts/SimulatorContext';
+import { useAppwrite } from '../../contexts/AppwriteContext';
 import { CHEMICALS } from '../../types/chemistry';
 import type { Chemical } from '../../types/chemistry';
 
@@ -23,6 +24,7 @@ interface APIError {
 export const AIAssistant = ({ isOpen, onClose, context, initialMessages, isContinuedChat }: AIAssistantProps) => {
     const { saveSession } = useChatHistory();
     const { triggerChemicalReaction } = useSimulator();
+    const { incrementAIQuestionsCount } = useAppwrite();
     const [messages, setMessages] = useState<Message[]>(initialMessages && initialMessages.length > 0
         ? initialMessages
         : (isContinuedChat
@@ -103,6 +105,11 @@ What would you like to learn today?`,
         setMessages((prev) => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
+
+        // Increment AI questions count
+        incrementAIQuestionsCount().catch(error => {
+            console.error('Error incrementing AI questions count:', error);
+        });
 
         // Handle /simulate command specially
         if (input.trim().toLowerCase() === '/simulate') {

@@ -35,6 +35,22 @@ A modern, interactive science laboratory application built with React, TypeScrip
 - **Searchable Archive**: Review past conversations
 - **Delete Options**: Remove individual chats or clear all
 
+### ⚙️ User Settings
+
+- **Cloud Storage**: All settings stored in Appwrite database
+- **Theme Preferences**: Light, dark, or system theme
+- **Notification Controls**: Enable/disable notifications
+- **Sound Settings**: Toggle sound effects on/off
+- **Auto-save Experiments**: Automatically save your work
+- **Default Lab Selection**: Choose your preferred lab at startup
+
+### 📊 User Analytics
+
+- **Usage Tracking**: Monitor your experiments and AI interactions
+- **Time Tracking**: See how much time you've spent learning
+- **Lab Preferences**: Identify your favorite science areas
+- **Cloud Storage**: All analytics stored in Appwrite database
+
 ### 🔊 Sound System
 
 - **Interactive Audio Feedback**: Sound effects for all lab interactions
@@ -94,7 +110,8 @@ src/
    # OpenRouter API
    VITE_OPENROUTER_API_KEY=
    ```
-   Edit the `.env` file with your API keys (see [API Keys Setup](#-api-keys-setup))
+
+Edit the `.env` file with your API keys (see [API Keys Setup](#-api-keys-setup))
 
 4. **Start the development server**
    ```bash
@@ -195,69 +212,62 @@ src/
    - Enable Email/Password authentication
    - Enable Magic URL authentication
 
-4. **Add Platform**
+4. **Create Database**
+   - Go to **Databases** → **Create Database**
+   - Name it "Virtual Science Lab"
+   - Copy your Database ID
+
+5. **Create Collections**
+   - Go to your database → **Collections** → **Create Collection**
+   - Create the following collections:
+     - **Chat Sessions** - For storing chat history
+     - **Mixtures** - For storing chemistry mixtures
+     - **User Data** - For storing user tour status
+     - **User Settings** - For storing user settings
+     - **User Analytics** - For storing user analytics data
+   - Copy each collection's ID
+
+6. **Set Collection Permissions**
+   - For each collection, go to **Settings** → **Permissions**
+   - Set **Read** and **Write** permissions to **Any** for all collections
+   - This allows users to access their own data
+
+7. **Add Attributes to Collections**
+   - **User Data Collection**:
+     - `type` (string, required) - Used to distinguish between tour data ('tour')
+     - `isTourShown` (boolean) - Whether the welcome tour has been shown
+     - `userId` (string, required) - User ID
+
+   - **User Settings Collection**:
+     - `userId` (string, required) - User ID
+     - `theme` (string) - User's theme preference ('light', 'dark', or 'system')
+     - `notifications` (boolean) - Whether notifications are enabled
+     - `soundEffects` (boolean) - Whether sound effects are enabled
+     - `autoSaveExperiments` (boolean) - Whether experiments are auto-saved
+     - `defaultLab` (string) - Default lab ('chemistry' or 'physics')
+
+   - **User Analytics Collection**:
+     - `userId` (string, required) - User ID
+     - `experimentsRun` (integer) - Number of experiments run
+     - `aiQuestionsAsked` (integer) - Number of AI questions asked
+     - `timeSpent` (integer) - Time spent in minutes
+     - `favoriteLab` (string) - Favorite lab ('chemistry' or 'physics')
+     - `lastActivity` (string) - ISO date string of last activity
+
+8. **Add Platform**
    - Go to **Settings** → **Platforms**
    - Click "Add Platform" → "Web"
    - Add `http://localhost:5173` for development
    - Add your production URL later
 
-5. **Create Database for App Data**
-   - Go to **Databases** → **Create Database**
-   - Name it "Science Lab Data"
-   - Copy your Database ID for use in environment variables
-
-6. **Create Collections**
-
-   **A. Chat Sessions Collection**
-   - In your new database, click "Create Collection"
-   - Name it "Chat Sessions"
-   - Add the following attributes:
-     - `userId` (string, 255 characters, required) - User identifier
-     - `title` (string, 255 characters, required)
-     - `context` (string, 50 characters, optional)
-     - `messages` (string, required - JSON stringified array)
-   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
-   - Add the following permissions:
-     - Read: Any
-     - Write: Any
-   - Copy the Collection ID for use in environment variables
-
-   **B. Mixtures Collection**
-   - In your database, click "Create Collection"
-   - Name it "Mixtures"
-   - Add the following attributes:
-     - `userId` (string, 255 characters, required) - User identifier
-     - `name` (string, 255 characters, required) - Mixture name
-     - `chemicals` (string, required - JSON stringified array) - Chemical data
-     - `color` (string, 7 characters, required) - Hex color code
-   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
-   - Add the following permissions:
-     - Read: Any
-     - Write: Any
-   - Copy the Collection ID for use in environment variables
-
-   **C. User Data Collection**
-   - In your database, click "Create Collection"
-   - Name it "User Data"
-   - Add the following attributes:
-     - `userId` (string, 255 characters, required) - User identifier
-     - `type` (string, 50 characters, required) - Used to distinguish between "tour" and "settings"
-     - `isTourShown` (boolean, optional) - Tour completion status
-     - `settings` (string, optional - JSON stringified object) - User settings data
-   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
-   - Add the following permissions:
-     - Read: Any
-     - Write: Any
-   - Copy the Collection ID for use in environment variables
-
-7. **Add to .env**
+9. **Add to .env**
 
    ```env
    VITE_APPWRITE_PROJECT_ID=your-project-id-from-step-2
-   VITE_APPWRITE_DATABASE_ID=your-database-id-from-step-5
-   VITE_APPWRITE_CHAT_COLLECTION_ID=your-chat-collection-id-from-step-6A
-   VITE_APPWRITE_MIXTURES_COLLECTION_ID=your-mixtures-collection-id-from-step-6B
-   VITE_APPWRITE_USER_DATA_COLLECTION_ID=your-user-data-collection-id-from-step-6C
+   VITE_APPWRITE_DATABASE_ID=your-database-id-from-step-4
+   VITE_APPWRITE_CHAT_COLLECTION_ID=your-chat-collection-id-from-step-5
+   VITE_APPWRITE_MIXTURES_COLLECTION_ID=your-mixtures-collection-id-from-step-5
+   VITE_APPWRITE_USER_DATA_COLLECTION_ID=your-user-data-collection-id-from-step-5
    ```
 
 ### OpenRouter API Setup
@@ -280,8 +290,6 @@ src/
 > Note: The application now uses separate collections for different data types and requires all Appwrite environment variables to be set. There is no fallback to localStorage - all data is stored in the Appwrite database. Appwrite automatically generates `$id` and `$createdAt` fields for all documents.
 
 ## 🌐 Deployment
-
-### Deploy to Vercel Appwrite
 
 ## 🗺️ Roadmap
 
@@ -676,69 +684,62 @@ virtual-science-lab/
    - Enable Email/Password authentication
    - Enable Magic URL authentication
 
-4. **Add Platform**
+4. **Create Database**
+   - Go to **Databases** → **Create Database**
+   - Name it "Virtual Science Lab"
+   - Copy your Database ID
+
+5. **Create Collections**
+   - Go to your database → **Collections** → **Create Collection**
+   - Create the following collections:
+     - **Chat Sessions** - For storing chat history
+     - **Mixtures** - For storing chemistry mixtures
+     - **User Data** - For storing user tour status
+     - **User Settings** - For storing user settings
+     - **User Analytics** - For storing user analytics data
+   - Copy each collection's ID
+
+6. **Set Collection Permissions**
+   - For each collection, go to **Settings** → **Permissions**
+   - Set **Read** and **Write** permissions to **Any** for all collections
+   - This allows users to access their own data
+
+7. **Add Attributes to Collections**
+   - **User Data Collection**:
+     - `type` (string, required) - Used to distinguish between tour data ('tour')
+     - `isTourShown` (boolean) - Whether the welcome tour has been shown
+     - `userId` (string, required) - User ID
+
+   - **User Settings Collection**:
+     - `userId` (string, required) - User ID
+     - `theme` (string) - User's theme preference ('light', 'dark', or 'system')
+     - `notifications` (boolean) - Whether notifications are enabled
+     - `soundEffects` (boolean) - Whether sound effects are enabled
+     - `autoSaveExperiments` (boolean) - Whether experiments are auto-saved
+     - `defaultLab` (string) - Default lab ('chemistry' or 'physics')
+
+   - **User Analytics Collection**:
+     - `userId` (string, required) - User ID
+     - `experimentsRun` (integer) - Number of experiments run
+     - `aiQuestionsAsked` (integer) - Number of AI questions asked
+     - `timeSpent` (integer) - Time spent in minutes
+     - `favoriteLab` (string) - Favorite lab ('chemistry' or 'physics')
+     - `lastActivity` (string) - ISO date string of last activity
+
+8. **Add Platform**
    - Go to **Settings** → **Platforms**
    - Click "Add Platform" → "Web"
    - Add `http://localhost:5173` for development
    - Add your production URL later
 
-5. **Create Database for Science Lab Data**
-   - Go to **Databases** → **Create Database**
-   - Name it "Science Lab Data"
-   - Copy your Database ID for use in environment variables
-
-6. **Create Collections**
-
-   **A. Chat Sessions Collection**
-   - In your new database, click "Create Collection"
-   - Name it "Chat Sessions"
-   - Add the following attributes:
-     - `userId` (string, 255 characters, required) - User identifier
-     - `title` (string, 255 characters, required)
-     - `context` (string, 50 characters, optional)
-     - `messages` (string, required - JSON stringified array)
-   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
-   - Add the following permissions:
-     - Read: Any
-     - Write: Any
-   - Copy the Collection ID for use in environment variables
-
-   **B. Mixtures Collection**
-   - In your database, click "Create Collection"
-   - Name it "Mixtures"
-   - Add the following attributes:
-     - `userId` (string, 255 characters, required) - User identifier
-     - `name` (string, 255 characters, required) - Mixture name
-     - `chemicals` (string, required - JSON stringified array) - Chemical data
-     - `color` (string, 7 characters, required) - Hex color code
-   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
-   - Add the following permissions:
-     - Read: Any
-     - Write: Any
-   - Copy the Collection ID for use in environment variables
-
-   **C. User Data Collection**
-   - In your database, click "Create Collection"
-   - Name it "User Data"
-   - Add the following attributes:
-     - `userId` (string, 255 characters, required) - User identifier
-     - `type` (string, 50 characters, required) - Used to distinguish between "tour" and "settings"
-     - `isTourShown` (boolean, optional) - Tour completion status
-     - `settings` (string, optional - JSON stringified object) - User settings data
-   - Note: The `$id` and `$createdAt` fields are automatically provided by Appwrite and should not be manually added
-   - Add the following permissions:
-     - Read: Any
-     - Write: Any
-   - Copy the Collection ID for use in environment variables
-
-7. **Add to .env**
+9. **Add to .env**
 
    ```env
    VITE_APPWRITE_PROJECT_ID=your-project-id-from-step-2
-   VITE_APPWRITE_DATABASE_ID=your-database-id-from-step-5
-   VITE_APPWRITE_CHAT_COLLECTION_ID=your-chat-collection-id-from-step-6A
-   VITE_APPWRITE_MIXTURES_COLLECTION_ID=your-mixtures-collection-id-from-step-6B
-   VITE_APPWRITE_USER_DATA_COLLECTION_ID=your-user-data-collection-id-from-step-6C
+   VITE_APPWRITE_DATABASE_ID=your-database-id-from-step-4
+   VITE_APPWRITE_CHAT_COLLECTION_ID=your-chat-collection-id-from-step-5
+   VITE_APPWRITE_MIXTURES_COLLECTION_ID=your-mixtures-collection-id-from-step-5
+   VITE_APPWRITE_USER_DATA_COLLECTION_ID=your-user-data-collection-id-from-step-5
    ```
 
 ### OpenRouter API Setup

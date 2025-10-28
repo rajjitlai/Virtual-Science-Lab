@@ -11,7 +11,6 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LoadingScreen } from './components/common/LoadingScreen';
 import { WelcomeTour } from './components/common/WelcomeTour';
 import { DemoMode } from './components/common/DemoMode';
-import { ExportModal } from './components/common/ExportModal';
 import { MobileNav } from './components/common/MobileNav';
 import { PerformanceMonitor } from './components/common/PerformanceMonitor';
 import { Analytics } from './components/common/Analytics';
@@ -61,14 +60,12 @@ const Lab = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isDemoOpen, setIsDemoOpen] = useState(false);
-  const [isExportOpen, setIsExportOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [continuedChat, setContinuedChat] = useState<{ messages: any[]; context?: 'chemistry' | 'physics' } | null>(null);
   const [isContinuingChat, setIsContinuingChat] = useState(false);
   const [showWelcomeTour, setShowWelcomeTour] = useState(false);
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
-  const [exportData, setExportData] = useState<any>(null);
   const [showPerformance, setShowPerformance] = useState(false);
   const [demoScenario, setDemoScenario] = useState<any>(null);
 
@@ -77,20 +74,30 @@ const Lab = () => {
     const loadUserSettings = async () => {
       try {
         const settings = await getUserSettings();
+        const isTourShown = await getTourStatus();
+        
         if (settings) {
-          setUserSettings(settings);
+          // Combine settings with tour status
+          const combinedSettings = {
+            ...settings,
+            isTourShown: isTourShown || false
+          };
+          
+          setUserSettings(combinedSettings);
           // Apply theme from settings
-          if (settings.theme !== 'system') {
-            document.documentElement.classList.toggle('dark', settings.theme === 'dark');
+          if (combinedSettings.theme !== 'system') {
+            document.documentElement.classList.toggle('dark', combinedSettings.theme === 'dark');
           }
+          // Set the default lab from settings
+          setActiveTab(combinedSettings.defaultLab);
         }
       } catch (error) {
-        console.error('Error loading user settings:', error);
+        console.error('Error loading user settings from Appwrite:', error);
       }
     };
 
     loadUserSettings();
-  }, [getUserSettings]);
+  }, [getUserSettings, getTourStatus]);
 
   useEffect(() => {
     // Check if user has seen welcome tour
@@ -125,10 +132,6 @@ const Lab = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onDemoClick={() => setIsDemoOpen(true)}
-        onExportClick={() => {
-          setExportData({ type: activeTab, timestamp: new Date().toISOString() });
-          setIsExportOpen(true);
-        }}
         onHistoryClick={() => setIsHistoryOpen(true)}
         onSettingsClick={() => setIsSettingsOpen(true)}
         onAnalyticsClick={() => setIsAnalyticsOpen(true)}
@@ -218,12 +221,6 @@ const Lab = () => {
               showToast(`Starting ${scenario?.name || demoType} demo...`, 'info');
             }, 100);
           }}
-        />
-        <ExportModal
-          isOpen={isExportOpen}
-          onClose={() => setIsExportOpen(false)}
-          data={exportData}
-          type={activeTab}
         />
         <PerformanceMonitor
           isVisible={showPerformance}

@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { Physics, useBox, useSphere, usePlane } from '@react-three/cannon';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { PHYSICS_OBJECTS } from '../../types/physics';
+import { useAppwrite } from '../../contexts/AppwriteContext';
 import type { PhysicsObject } from '../../types/physics';
 
 interface PhysicsEngineProps {
@@ -80,6 +81,7 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate, demoObjects = [] }: Phys
     const [isRunning, setIsRunning] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
     const [selectedObjectType, setSelectedObjectType] = useState<string | null>(null);
+    const { incrementExperimentsCount } = useAppwrite();
 
     useEffect(() => {
         // Add initial ball
@@ -110,6 +112,11 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate, demoObjects = [] }: Phys
         setObjects(prev => [...prev, newObj]);
         setSelectedObjectType(obj.id);
         console.log(`Added ${obj.type} with color ${obj.color} and size ${newObj.size}`);
+        
+        // Increment experiments count when an object is added
+        incrementExperimentsCount().catch(error => {
+            console.error('Error incrementing experiments count:', error);
+        });
     };
 
     const clearObjects = () => {

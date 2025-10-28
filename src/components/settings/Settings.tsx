@@ -19,7 +19,7 @@ interface SettingsProps {
 export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: SettingsProps) => {
     const { user, logout } = useAuth();
     const { theme, setTheme } = useTheme();
-    const { getUserSettings, saveUserSettings } = useAppwrite();
+    const { getUserSettings, saveUserSettings, setTourStatus } = useAppwrite();
     const [settings, setSettings] = useState<UserSettings>(initialSettings || DEFAULT_SETTINGS);
     const [activeSection, setActiveSection] = useState<'profile' | 'appearance' | 'preferences' | 'about'>('profile');
     const [showTerms, setShowTerms] = useState(false);
@@ -50,13 +50,16 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
     const saveSettings = async (newSettings: UserSettings) => {
         setSettings(newSettings);
 
-        // Try to save to Appwrite first
+        // Save settings to Appwrite
         try {
-            await saveUserSettings(newSettings);
+            // Save the main settings (excluding isTourShown)
+            const { isTourShown, ...settingsToSave } = newSettings;
+            await saveUserSettings(settingsToSave as UserSettings);
+            
+            // Save tour status separately
+            await setTourStatus(isTourShown);
         } catch (error) {
             console.error('Error saving settings to Appwrite:', error);
-            // If Appwrite fails, fallback to localStorage
-            localStorage.setItem('userSettings', JSON.stringify(newSettings));
         }
 
         // Also call the onSaveSettings prop if provided
@@ -73,6 +76,23 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
         setTheme(newTheme);
         await saveSettings({ ...settings, theme: newTheme });
     };
+
+    // Add useEffect to handle auto-save when settings change
+    useEffect(() => {
+        // Only auto-save if the setting is enabled
+        if (settings.autoSaveExperiments) {
+            // Save to Appwrite
+            const { isTourShown, ...settingsToSave } = settings;
+            saveUserSettings(settingsToSave as UserSettings).catch(error => {
+                console.error('Auto-save to Appwrite failed:', error);
+            });
+            
+            // Save tour status separately
+            setTourStatus(isTourShown).catch(error => {
+                console.error('Error saving tour status:', error);
+            });
+        }
+    }, [settings, saveUserSettings, setTourStatus]);
 
     if (!isOpen) return null;
 

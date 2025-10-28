@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Mixture } from '../types/chemistry';
-import type { UserSettings } from '../types/settings';
+import type { UserSettings, UserAnalytics } from '../types/settings';
 import { useAuth } from './AuthContext';
 import { databases } from '../config/appwrite';
 import { ID, Query } from 'appwrite';
@@ -37,6 +37,13 @@ interface AppwriteContextType {
     setTourStatus: (status: boolean) => Promise<void>;
     getUserSettings: () => Promise<UserSettings | null>;
     saveUserSettings: (settings: UserSettings) => Promise<void>;
+    // Add analytics methods
+    getUserAnalytics: () => Promise<UserAnalytics | null>;
+    saveUserAnalytics: (analytics: UserAnalytics) => Promise<void>;
+    incrementExperimentsCount: () => Promise<void>;
+    incrementAIQuestionsCount: () => Promise<void>;
+    // Add collection creation method
+    createAnalyticsCollection: () => Promise<void>;
 }
 
 const AppwriteContext = createContext<AppwriteContextType | undefined>(undefined);
@@ -48,7 +55,9 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
     const isCloudStorage = !!import.meta.env.VITE_APPWRITE_DATABASE_ID &&
         !!import.meta.env.VITE_APPWRITE_CHAT_COLLECTION_ID &&
         !!import.meta.env.VITE_APPWRITE_MIXTURES_COLLECTION_ID &&
-        !!import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID;
+        !!import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID &&
+        !!import.meta.env.VITE_APPWRITE_SETTINGS_COLLECTION_ID &&
+        !!import.meta.env.VITE_APPWRITE_ANALYTICS_COLLECTION_ID;
 
     // Ensure Appwrite collections exist
     useEffect(() => {
@@ -238,23 +247,35 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
 
     const getUserSettings = async (): Promise<UserSettings | null> => {
         if (!isCloudStorage || !user) {
-            throw new Error('Appwrite cloud storage is not configured or user is not authenticated');
+            return null;
         }
 
         try {
-            // Load user settings from Appwrite database in dedicated user data collection
+            // Load user settings from Appwrite database in dedicated settings collection
             const response = await databases.listDocuments(
                 import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
+                import.meta.env.VITE_APPWRITE_SETTINGS_COLLECTION_ID,
                 [
                     Query.equal('userId', user.$id),
-                    Query.equal('type', 'settings'),
                     Query.limit(1)
                 ]
             );
 
             if (response.documents.length > 0) {
-                return JSON.parse(response.documents[0].settings || '{}');
+                const doc = response.documents[0];
+                const settings: UserSettings = {
+                    theme: doc.theme || 'system',
+                    notifications: doc.notifications !== undefined ? doc.notifications : true,
+                    soundEffects: doc.soundEffects !== undefined ? doc.soundEffects : true,
+                    autoSaveExperiments: doc.autoSaveExperiments !== undefined ? doc.autoSaveExperiments : false,
+                    defaultLab: doc.defaultLab || 'chemistry',
+                    isTourShown: false // This will be loaded separately from user_data collection
+                };
+                
+                // Save to localStorage for immediate access next time
+                localStorage.setItem('userSettings', JSON.stringify(settings));
+                
+                return settings;
             }
             return null;
         } catch (error) {
@@ -264,47 +285,237 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
     };
 
     const saveUserSettings = async (settings: UserSettings) => {
+        // Save to localStorage for immediate access
+        localStorage.setItem('userSettings', JSON.stringify(settings));
+        
         if (!isCloudStorage || !user) {
-            throw new Error('Appwrite cloud storage is not configured or user is not authenticated');
+            return;
         }
 
         try {
             // Check if settings document already exists
             const response = await databases.listDocuments(
                 import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
+                import.meta.env.VITE_APPWRITE_SETTINGS_COLLECTION_ID,
                 [
                     Query.equal('userId', user.$id),
-                    Query.equal('type', 'settings'),
                     Query.limit(1)
                 ]
             );
 
             if (response.documents.length > 0) {
-                // Update existing settings document
+                // Update existing settings document with individual fields (excluding isTourShown)
                 await databases.updateDocument(
                     import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                    import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
+                    import.meta.env.VITE_APPWRITE_SETTINGS_COLLECTION_ID,
                     response.documents[0].$id,
                     {
-                        settings: JSON.stringify(settings)
+                        theme: settings.theme,
+                        notifications: settings.notifications,
+                        soundEffects: settings.soundEffects,
+                        autoSaveExperiments: settings.autoSaveExperiments,
+                        defaultLab: settings.defaultLab
                     }
                 );
             } else {
-                // Create new settings document
+                // Create new settings document with individual fields (excluding isTourShown)
                 await databases.createDocument(
                     import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                    import.meta.env.VITE_APPWRITE_USER_DATA_COLLECTION_ID,
+                    import.meta.env.VITE_APPWRITE_SETTINGS_COLLECTION_ID,
                     ID.unique(),
                     {
                         userId: user.$id,
-                        type: 'settings',
-                        settings: JSON.stringify(settings)
+                        theme: settings.theme,
+                        notifications: settings.notifications,
+                        soundEffects: settings.soundEffects,
+                        autoSaveExperiments: settings.autoSaveExperiments,
+                        defaultLab: settings.defaultLab
                     }
                 );
             }
         } catch (error) {
             console.error('Error saving user settings to Appwrite:', error);
+            throw error;
+        }
+    };
+
+    // Add analytics methods
+    const getUserAnalytics = async (): Promise<UserAnalytics | null> => {
+        // Always try localStorage first for immediate access
+        const localStorageAnalytics = localStorage.getItem('userAnalytics');
+        if (localStorageAnalytics) {
+            try {
+                const parsed = JSON.parse(localStorageAnalytics);
+                // If we have valid analytics data in localStorage, return it
+                if (parsed && typeof parsed === 'object') {
+                    return parsed;
+                }
+            } catch (error) {
+                console.error('Error parsing localStorage analytics:', error);
+            }
+        }
+
+        if (!isCloudStorage || !user) {
+            // Return default analytics when Appwrite is not configured
+            return {
+                experimentsRun: 0,
+                aiQuestionsAsked: 0,
+                timeSpent: 0,
+                favoriteLab: 'chemistry',
+                lastActivity: new Date().toISOString(),
+                chemistryMastery: 0,
+                physicsMastery: 0
+            };
+        }
+
+        try {
+            // Load user analytics from Appwrite database in dedicated analytics collection
+            const response = await databases.listDocuments(
+                import.meta.env.VITE_APPWRITE_DATABASE_ID,
+                import.meta.env.VITE_APPWRITE_ANALYTICS_COLLECTION_ID,
+                [
+                    Query.equal('userId', user.$id),
+                    Query.limit(1)
+                ]
+            );
+
+            if (response.documents.length > 0) {
+                const doc = response.documents[0];
+                const analytics: UserAnalytics = {
+                    experimentsRun: doc.experimentsRun || 0,
+                    aiQuestionsAsked: doc.aiQuestionsAsked || 0,
+                    timeSpent: doc.timeSpent || 0,
+                    favoriteLab: doc.favoriteLab || 'chemistry',
+                    lastActivity: doc.lastActivity || new Date().toISOString(),
+                    chemistryMastery: doc.chemistryMastery || 0,
+                    physicsMastery: doc.physicsMastery || 0
+                };
+                
+                // Save to localStorage for immediate access next time
+                localStorage.setItem('userAnalytics', JSON.stringify(analytics));
+                
+                return analytics;
+            }
+            
+            // Return default analytics if none found
+            return {
+                experimentsRun: 0,
+                aiQuestionsAsked: 0,
+                timeSpent: 0,
+                favoriteLab: 'chemistry',
+                lastActivity: new Date().toISOString(),
+                chemistryMastery: 0,
+                physicsMastery: 0
+            };
+        } catch (error) {
+            console.error('Error loading user analytics from Appwrite:', error);
+            throw error;
+        }
+    };
+
+    const saveUserAnalytics = async (analytics: UserAnalytics) => {
+        // Always save to localStorage for immediate access
+        localStorage.setItem('userAnalytics', JSON.stringify(analytics));
+        
+        if (!isCloudStorage || !user) {
+            // Only save to localStorage when Appwrite is not configured
+            return;
+        }
+
+        try {
+            // Check if analytics document already exists
+            const response = await databases.listDocuments(
+                import.meta.env.VITE_APPWRITE_DATABASE_ID,
+                import.meta.env.VITE_APPWRITE_ANALYTICS_COLLECTION_ID,
+                [
+                    Query.equal('userId', user.$id),
+                    Query.limit(1)
+                ]
+            );
+
+            if (response.documents.length > 0) {
+                // Update existing analytics document
+                await databases.updateDocument(
+                    import.meta.env.VITE_APPWRITE_DATABASE_ID,
+                    import.meta.env.VITE_APPWRITE_ANALYTICS_COLLECTION_ID,
+                    response.documents[0].$id,
+                    {
+                        experimentsRun: analytics.experimentsRun,
+                        aiQuestionsAsked: analytics.aiQuestionsAsked,
+                        timeSpent: analytics.timeSpent,
+                        favoriteLab: analytics.favoriteLab,
+                        lastActivity: analytics.lastActivity,
+                        chemistryMastery: analytics.chemistryMastery,
+                        physicsMastery: analytics.physicsMastery
+                    }
+                );
+            } else {
+                // Create new analytics document
+                await databases.createDocument(
+                    import.meta.env.VITE_APPWRITE_DATABASE_ID,
+                    import.meta.env.VITE_APPWRITE_ANALYTICS_COLLECTION_ID,
+                    ID.unique(),
+                    {
+                        userId: user.$id,
+                        experimentsRun: analytics.experimentsRun,
+                        aiQuestionsAsked: analytics.aiQuestionsAsked,
+                        timeSpent: analytics.timeSpent,
+                        favoriteLab: analytics.favoriteLab,
+                        lastActivity: analytics.lastActivity,
+                        chemistryMastery: analytics.chemistryMastery,
+                        physicsMastery: analytics.physicsMastery
+                    }
+                );
+            }
+        } catch (error) {
+            console.error('Error saving user analytics to Appwrite:', error);
+            throw error;
+        }
+    };
+
+    const incrementExperimentsCount = async () => {
+        try {
+            const currentAnalytics = await getUserAnalytics();
+            if (currentAnalytics) {
+                const updatedAnalytics = {
+                    ...currentAnalytics,
+                    experimentsRun: currentAnalytics.experimentsRun + 1,
+                    lastActivity: new Date().toISOString()
+                };
+                await saveUserAnalytics(updatedAnalytics);
+            }
+        } catch (error) {
+            console.error('Error incrementing experiments count:', error);
+        }
+    };
+
+    const incrementAIQuestionsCount = async () => {
+        try {
+            const currentAnalytics = await getUserAnalytics();
+            if (currentAnalytics) {
+                const updatedAnalytics = {
+                    ...currentAnalytics,
+                    aiQuestionsAsked: currentAnalytics.aiQuestionsAsked + 1,
+                    lastActivity: new Date().toISOString()
+                };
+                await saveUserAnalytics(updatedAnalytics);
+            }
+        } catch (error) {
+            console.error('Error incrementing AI questions count:', error);
+        }
+    };
+
+    const createAnalyticsCollection = async () => {
+        if (!isCloudStorage) {
+            throw new Error('Appwrite cloud storage is not configured');
+        }
+
+        try {
+            // This would be used to create the analytics collection if needed
+            // In practice, this would be done through the Appwrite console
+            console.log('Analytics collection creation would be implemented here');
+        } catch (error) {
+            console.error('Error creating analytics collection:', error);
             throw error;
         }
     };
@@ -319,7 +530,12 @@ const AppwriteProviderComponent = ({ children }: { children: ReactNode }) => {
             getTourStatus,
             setTourStatus,
             getUserSettings,
-            saveUserSettings
+            saveUserSettings,
+            getUserAnalytics,
+            saveUserAnalytics,
+            incrementExperimentsCount,
+            incrementAIQuestionsCount,
+            createAnalyticsCollection
         }}>
             {children}
         </AppwriteContext.Provider>

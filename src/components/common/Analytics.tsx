@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSettings } from '../../contexts/SettingsContext';
-
-interface AnalyticsData {
-    experimentsRun: number;
-    aiQuestionsAsked: number;
-    timeSpent: number;
-    favoriteLab: 'chemistry' | 'physics';
-    lastActivity: string;
-}
+import { useAppwrite } from '../../contexts/AppwriteContext';
+import type { UserAnalytics } from '../../types/settings';
 
 interface AnalyticsProps {
     isOpen: boolean;
@@ -16,33 +10,24 @@ interface AnalyticsProps {
 
 export const Analytics = ({ isOpen, onClose }: AnalyticsProps) => {
     const { settings } = useSettings();
-    const [analytics, setAnalytics] = useState<AnalyticsData>({
+    const { getUserAnalytics } = useAppwrite();
+    const [analytics, setAnalytics] = useState<UserAnalytics>({
         experimentsRun: 0,
         aiQuestionsAsked: 0,
         timeSpent: 0,
         favoriteLab: 'chemistry',
-        lastActivity: 'Never'
+        lastActivity: new Date().toISOString(),
+        chemistryMastery: 0,
+        physicsMastery: 0
     });
 
     useEffect(() => {
-        // Load analytics from localStorage
-        const loadAnalytics = () => {
+        // Load analytics from Appwrite or localStorage
+        const loadAnalytics = async () => {
             try {
-                const saved = localStorage.getItem('virtualScienceLabAnalytics');
-                if (saved) {
-                    const data = JSON.parse(saved);
+                const data = await getUserAnalytics();
+                if (data) {
                     setAnalytics(data);
-                } else {
-                    // Initialize with some demo data
-                    const demoData: AnalyticsData = {
-                        experimentsRun: Math.floor(Math.random() * 50) + 10,
-                        aiQuestionsAsked: Math.floor(Math.random() * 30) + 5,
-                        timeSpent: Math.floor(Math.random() * 120) + 30, // minutes
-                        favoriteLab: Math.random() > 0.5 ? 'chemistry' : 'physics',
-                        lastActivity: new Date().toLocaleString()
-                    };
-                    setAnalytics(demoData);
-                    localStorage.setItem('virtualScienceLabAnalytics', JSON.stringify(demoData));
                 }
             } catch (error) {
                 console.error('Error loading analytics:', error);
@@ -50,7 +35,7 @@ export const Analytics = ({ isOpen, onClose }: AnalyticsProps) => {
         };
 
         loadAnalytics();
-    }, []);
+    }, [getUserAnalytics]);
 
     const formatTime = (minutes: number) => {
         const hours = Math.floor(minutes / 60);
@@ -179,7 +164,7 @@ export const Analytics = ({ isOpen, onClose }: AnalyticsProps) => {
                                     Last Activity
                                 </h4>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {analytics.lastActivity}
+                                    {new Date(analytics.lastActivity).toLocaleString()}
                                 </p>
                             </div>
                         </div>
@@ -193,18 +178,18 @@ export const Analytics = ({ isOpen, onClose }: AnalyticsProps) => {
                         <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600 dark:text-gray-400">Chemistry Mastery</span>
-                                <span className="text-gray-800 dark:text-white">75%</span>
+                                <span className="text-gray-800 dark:text-white">{analytics.chemistryMastery}%</span>
                             </div>
                             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                                <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${analytics.chemistryMastery}%` }}></div>
                             </div>
 
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600 dark:text-gray-400">Physics Mastery</span>
-                                <span className="text-gray-800 dark:text-white">60%</span>
+                                <span className="text-gray-800 dark:text-white">{analytics.physicsMastery}%</span>
                             </div>
                             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                <div className="bg-green-600 h-2 rounded-full" style={{ width: '60%' }}></div>
+                                <div className="bg-green-600 h-2 rounded-full" style={{ width: `${analytics.physicsMastery}%` }}></div>
                             </div>
                         </div>
                     </div>

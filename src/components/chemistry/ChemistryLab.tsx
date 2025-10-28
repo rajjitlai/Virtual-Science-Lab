@@ -15,7 +15,7 @@ interface ChemistryLabProps {
 }
 
 export const ChemistryLab = ({ demoScenario }: ChemistryLabProps) => {
-    const { loadMixtures, saveMixture } = useAppwrite();
+    const { loadMixtures, saveMixture, incrementExperimentsCount } = useAppwrite();
     const { showToast } = useToast();
     const { pendingChemicals, clearPendingChemicals } = useSimulator();
     const { startChemistryDemo, isDemoRunning, getDemoChemicals } = useDemo();
@@ -366,6 +366,9 @@ Respond ONLY with JSON in this format:
         if (mixture.chemicals.length > 0) {
             setLiquidColor(mixture.color);
             setLiquidLevel(Math.min(0.5 + (mixture.chemicals.length * 0.3), 1.4));
+            
+            // Check for reactions with the loaded chemicals
+            checkReaction(mixture.chemicals);
         }
 
         // Show a message
@@ -386,6 +389,12 @@ Respond ONLY with JSON in this format:
             setReactionProduct(reaction.product);
             setCurrentReaction(reaction);
             setAiResponse(`🎉 Reaction detected! ${reaction.description} The product is ${reaction.product.name} (${reaction.product.formula})`);
+            
+            // Increment experiments count when a reaction occurs
+            incrementExperimentsCount().catch(error => {
+                console.error('Error incrementing experiments count:', error);
+            });
+            
             if (reaction.visualization === 'bubbles') {
                 setShowBubbles(true);
                 setTimeout(() => setShowBubbles(false), 5000);
