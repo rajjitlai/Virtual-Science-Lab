@@ -219,6 +219,7 @@ const ProductNode = ({ position, product, progress }: ProductNodeProps) => {
 export const FlowchartCanvas = ({ selectedChemicals, reaction, onClose }: FlowchartCanvasProps) => {
     const [animationProgress, setAnimationProgress] = useState(0);
     const [currentPhase, setCurrentPhase] = useState<'reactants' | 'reaction' | 'products'>('reactants');
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     useEffect(() => {
         if (!reaction) return;
@@ -226,25 +227,44 @@ export const FlowchartCanvas = ({ selectedChemicals, reaction, onClose }: Flowch
         setAnimationProgress(0);
         setCurrentPhase('reactants');
 
+        // Remove timeout and use continuous animation
         const interval = setInterval(() => {
             setAnimationProgress((prev) => {
-                const newProgress = (prev + 0.02) % 1; // Loop continuously
-
-                // Phase transitions
-                if (newProgress < 0.3) {
-                    setCurrentPhase('reactants');
-                } else if (newProgress < 0.7) {
-                    setCurrentPhase('reaction');
-                } else {
-                    setCurrentPhase('products');
-                }
-
+                const newProgress = (prev + 0.02) % 1;
+                if (newProgress < 0.3) setCurrentPhase('reactants');
+                else if (newProgress < 0.7) setCurrentPhase('reaction');
+                else setCurrentPhase('products');
                 return newProgress;
             });
         }, 50);
 
         return () => clearInterval(interval);
     }, [reaction]);
+
+    const handleFullscreen = () => {
+        const element = document.querySelector('.flowchart-container');
+        if (!element) return;
+
+        if (!isFullscreen) {
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+        setIsFullscreen(!isFullscreen);
+    };
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
 
     if (!reaction) {
         return (
@@ -281,15 +301,24 @@ export const FlowchartCanvas = ({ selectedChemicals, reaction, onClose }: Flowch
     const centerPosition: [number, number, number] = [0, 0, 0];
 
     return (
-        <div className="w-full h-[500px] bg-gradient-to-b from-gray-900 to-black rounded-lg relative">
-            {/* Close button */}
-            <button
-                onClick={onClose}
-                className="absolute top-4 right-4 z-10 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-                <span>✕</span>
-                <span>Close Visualization</span>
-            </button>
+        <div className={`flowchart-container w-full ${isFullscreen ? 'h-screen' : 'h-[500px]'} bg-gradient-to-b from-gray-900 to-black rounded-lg relative`}>
+            {/* Control buttons */}
+            <div className="absolute top-4 right-4 z-10 flex gap-2">
+                <button
+                    onClick={handleFullscreen}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                    <span>{isFullscreen ? '✕' : '⤢'}</span>
+                    <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+                </button>
+                <button
+                    onClick={onClose}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                    <span>✕</span>
+                    <span>Close</span>
+                </button>
+            </div>
 
             {/* Title */}
             <div className="absolute top-4 left-4 z-10 bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">

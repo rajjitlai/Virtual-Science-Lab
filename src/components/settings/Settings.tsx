@@ -55,7 +55,7 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
             // Save the main settings (excluding isTourShown)
             const { isTourShown, ...settingsToSave } = newSettings;
             await saveUserSettings(settingsToSave as UserSettings);
-            
+
             // Save tour status separately
             await setTourStatus(isTourShown);
         } catch (error) {
@@ -72,10 +72,33 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
         }
     };
 
-    const handleThemeChange = async (newTheme: 'light' | 'dark' | 'system') => {
-        setTheme(newTheme);
-        await saveSettings({ ...settings, theme: newTheme });
+    const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
+        // Update settings
+        const updatedSettings = { ...settings, theme: newTheme };
+        saveSettings(updatedSettings);
+
+        // Apply theme immediately
+        if (newTheme === 'system') {
+            // Check system preference
+            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.classList.toggle('dark', systemTheme === 'dark');
+        } else {
+            document.documentElement.classList.toggle('dark', newTheme === 'dark');
+        }
     };
+
+    // Listen for system theme changes
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleChange = (e: MediaQueryListEvent) => {
+            if (settings.theme === 'system') {
+                document.documentElement.classList.toggle('dark', e.matches);
+            }
+        };
+
+        mediaQuery.addEventListener('change', handleChange);
+        return () => mediaQuery.removeEventListener('change', handleChange);
+    }, [settings.theme]);
 
     // Add useEffect to handle auto-save when settings change
     useEffect(() => {
@@ -86,7 +109,7 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
             saveUserSettings(settingsToSave as UserSettings).catch(error => {
                 console.error('Auto-save to Appwrite failed:', error);
             });
-            
+
             // Save tour status separately
             setTourStatus(isTourShown).catch(error => {
                 console.error('Error saving tour status:', error);
@@ -230,8 +253,8 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                                         <div className="grid grid-cols-3 gap-4">
                                             <button
                                                 onClick={() => handleThemeChange('light')}
-                                                className={`p-4 border-2 rounded-lg transition-all ${theme === 'light'
-                                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
+                                                className={`p-4 border-2 rounded-lg transition-all ${settings.theme === 'light'
+                                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900 ring-2 ring-indigo-600 ring-offset-2 dark:ring-offset-gray-800'
                                                     : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
                                                     }`}
                                             >
@@ -242,8 +265,8 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
 
                                             <button
                                                 onClick={() => handleThemeChange('dark')}
-                                                className={`p-4 border-2 rounded-lg transition-all ${theme === 'dark'
-                                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
+                                                className={`p-4 border-2 rounded-lg transition-all ${settings.theme === 'dark'
+                                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900 ring-2 ring-indigo-600 ring-offset-2 dark:ring-offset-gray-800'
                                                     : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
                                                     }`}
                                             >
@@ -254,8 +277,8 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
 
                                             <button
                                                 onClick={() => handleThemeChange('system')}
-                                                className={`p-4 border-2 rounded-lg transition-all ${theme === 'system'
-                                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900'
+                                                className={`p-4 border-2 rounded-lg transition-all ${settings.theme === 'system'
+                                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900 ring-2 ring-indigo-600 ring-offset-2 dark:ring-offset-gray-800'
                                                     : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400'
                                                     }`}
                                             >

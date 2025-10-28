@@ -3,17 +3,15 @@ import { useState } from 'react';
 interface MobileNavProps {
     activeTab: 'chemistry' | 'physics';
     onTabChange: (tab: 'chemistry' | 'physics') => void;
-    onDemoClick: () => void;
-    onHistoryClick: () => void;
-    onSettingsClick: () => void;
-    onAnalyticsClick: () => void;
+    onHistoryClick?: () => void;
+    onSettingsClick?: () => void;
+    onAnalyticsClick?: () => void;
     userName?: string;
 }
 
 export const MobileNav = ({
     activeTab,
     onTabChange,
-    onDemoClick,
     onHistoryClick,
     onSettingsClick,
     onAnalyticsClick,
@@ -48,8 +46,8 @@ export const MobileNav = ({
                                     setIsMenuOpen(false);
                                 }}
                                 className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm ${activeTab === 'chemistry'
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                                     }`}
                             >
                                 🧪 Chemistry
@@ -60,8 +58,8 @@ export const MobileNav = ({
                                     setIsMenuOpen(false);
                                 }}
                                 className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm ${activeTab === 'physics'
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                                     }`}
                             >
                                 ⚡ Physics
@@ -70,15 +68,6 @@ export const MobileNav = ({
 
                         {/* Action Buttons */}
                         <div className="grid grid-cols-2 gap-2">
-                            <button
-                                onClick={() => {
-                                    onDemoClick();
-                                    setIsMenuOpen(false);
-                                }}
-                                className="flex items-center justify-center gap-2 px-3 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm font-medium"
-                            >
-                                🎬 Demo
-                            </button>
                             <button
                                 onClick={() => {
                                     onHistoryClick();
@@ -128,13 +117,6 @@ export const MobileNav = ({
                         <span className="text-sm text-gray-600 dark:text-gray-300">
                             Welcome, {userName}
                         </span>
-                        <button
-                            onClick={onDemoClick}
-                            className="text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 text-2xl"
-                            title="Demo Mode"
-                        >
-                            🎬
-                        </button>
                         <button
                             onClick={onHistoryClick}
                             className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 text-2xl"

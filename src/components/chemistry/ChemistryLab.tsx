@@ -7,18 +7,15 @@ import { callGemmaModel } from '../../config/ai-service';
 import { useAppwrite } from '../../contexts/AppwriteContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useSimulator } from '../../contexts/SimulatorContext';
-import { useDemo } from '../../contexts/DemoContext';
 import { playBeep, playBubblesSound, playReactionSound, playResetSound } from '../../utils/sound';
 
 interface ChemistryLabProps {
-    demoScenario?: any;
 }
 
-export const ChemistryLab = ({ demoScenario }: ChemistryLabProps) => {
+export const ChemistryLab = ({ }: ChemistryLabProps) => {
     const { loadMixtures, saveMixture, incrementExperimentsCount } = useAppwrite();
     const { showToast } = useToast();
     const { pendingChemicals, clearPendingChemicals } = useSimulator();
-    const { startChemistryDemo, isDemoRunning, getDemoChemicals } = useDemo();
     const [selectedChemicals, setSelectedChemicals] = useState<Chemical[]>([]);
     const [liquidColor, setLiquidColor] = useState('#00aaff');
     const [liquidLevel, setLiquidLevel] = useState(0.25);
@@ -47,68 +44,6 @@ export const ChemistryLab = ({ demoScenario }: ChemistryLabProps) => {
 
         loadMixturesData();
     }, [loadMixtures, showToast]);
-
-    // Handle demo scenarios
-    useEffect(() => {
-        if (demoScenario) {
-            startChemistryDemo(demoScenario);
-
-            // Get the chemicals for this demo
-            const demoChemicals = getDemoChemicals();
-
-            if (demoChemicals.length > 0) {
-                // Reset the beaker
-                setSelectedChemicals([]);
-                setLiquidColor('#00aaff');
-                setLiquidLevel(0.25);
-                setShowBubbles(false);
-                setReactionProduct(null);
-                setCurrentReaction(null);
-                setFireIntensity(0);
-
-                // Add chemicals one by one with delays for visual effect
-                let delay = 1000;
-                demoChemicals.forEach((chemical) => {
-                    setTimeout(() => {
-                        setSelectedChemicals(prev => [...prev, chemical]);
-
-                        // Update liquid color based on chemicals
-                        if (chemical.color !== '#00aaff') {
-                            setLiquidColor(chemical.color);
-                        }
-
-                        // Increase liquid level
-                        setLiquidLevel(prev => Math.min(prev + 0.2, 1));
-
-                        // Show bubbles for certain chemicals
-                        if (chemical.name === 'Vinegar' || chemical.name === 'Baking Soda') {
-                            setShowBubbles(true);
-                        }
-
-                        // Check for reactions
-                        const newChemicals = [...selectedChemicals, chemical];
-                        const reaction = REACTIONS.find(r =>
-                            r.reactants.every(reactant =>
-                                newChemicals.some(chem => chem.id === reactant)
-                            )
-                        );
-
-                        if (reaction) {
-                            setTimeout(() => {
-                                setCurrentReaction(reaction);
-                                setReactionProduct(reaction.product);
-                                setShowBubbles(true);
-                                // No sound in demo mode
-                                showToast(`🎉 ${reaction.description}`, 'success');
-                            }, 500);
-                        }
-
-                    }, delay);
-                    delay += 2000; // 2 second delay between each chemical
-                });
-            }
-        }
-    }, [demoScenario, startChemistryDemo, getDemoChemicals, selectedChemicals, showToast]);
 
     // Handle AI-triggered chemicals from simulator context
     useEffect(() => {
@@ -366,7 +301,7 @@ Respond ONLY with JSON in this format:
         if (mixture.chemicals.length > 0) {
             setLiquidColor(mixture.color);
             setLiquidLevel(Math.min(0.5 + (mixture.chemicals.length * 0.3), 1.4));
-            
+
             // Check for reactions with the loaded chemicals
             checkReaction(mixture.chemicals);
         }
@@ -389,12 +324,12 @@ Respond ONLY with JSON in this format:
             setReactionProduct(reaction.product);
             setCurrentReaction(reaction);
             setAiResponse(`🎉 Reaction detected! ${reaction.description} The product is ${reaction.product.name} (${reaction.product.formula})`);
-            
+
             // Increment experiments count when a reaction occurs
             incrementExperimentsCount().catch(error => {
                 console.error('Error incrementing experiments count:', error);
             });
-            
+
             if (reaction.visualization === 'bubbles') {
                 setShowBubbles(true);
                 setTimeout(() => setShowBubbles(false), 5000);
@@ -473,12 +408,6 @@ Respond ONLY with JSON in this format:
                     <p className="text-base text-gray-600 dark:text-gray-300">
                         Experiment with chemicals, observe reactions, and learn chemistry interactively
                     </p>
-                    {isDemoRunning && (
-                        <div className="mt-4 inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-4 py-2 rounded-full">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                            <span className="text-sm font-medium">Demo Mode Active</span>
-                        </div>
-                    )}
                 </div>
 
                 {/* Main Lab Section */}

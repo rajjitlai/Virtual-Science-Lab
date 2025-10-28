@@ -10,7 +10,6 @@ import { DemoProvider } from './contexts/DemoContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LoadingScreen } from './components/common/LoadingScreen';
 import { WelcomeTour } from './components/common/WelcomeTour';
-import { DemoMode } from './components/common/DemoMode';
 import { MobileNav } from './components/common/MobileNav';
 import { PerformanceMonitor } from './components/common/PerformanceMonitor';
 import { Analytics } from './components/common/Analytics';
@@ -59,7 +58,6 @@ const Lab = () => {
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isDemoOpen, setIsDemoOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [continuedChat, setContinuedChat] = useState<{ messages: any[]; context?: 'chemistry' | 'physics' } | null>(null);
   const [isContinuingChat, setIsContinuingChat] = useState(false);
@@ -67,7 +65,7 @@ const Lab = () => {
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
   const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [showPerformance, setShowPerformance] = useState(false);
-  const [demoScenario, setDemoScenario] = useState<any>(null);
+  const [focusLab, setFocusLab] = useState<'chemistry' | 'physics' | null>(null);
 
   useEffect(() => {
     // Load user settings
@@ -75,14 +73,14 @@ const Lab = () => {
       try {
         const settings = await getUserSettings();
         const isTourShown = await getTourStatus();
-        
+
         if (settings) {
           // Combine settings with tour status
           const combinedSettings = {
             ...settings,
             isTourShown: isTourShown || false
           };
-          
+
           setUserSettings(combinedSettings);
           // Apply theme from settings
           if (combinedSettings.theme !== 'system') {
@@ -126,12 +124,19 @@ const Lab = () => {
     }
   }, [user, showToast, hasShownWelcome, getTourStatus, isCloudStorage]);
 
+  // Listen for focusLab change from DemoMode
+  useEffect(() => {
+    if (focusLab) {
+      setActiveTab(focusLab);
+      setFocusLab(null);
+    }
+  }, [focusLab]);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <MobileNav
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onDemoClick={() => setIsDemoOpen(true)}
         onHistoryClick={() => setIsHistoryOpen(true)}
         onSettingsClick={() => setIsSettingsOpen(true)}
         onAnalyticsClick={() => setIsAnalyticsOpen(true)}
@@ -168,7 +173,7 @@ const Lab = () => {
         </div>
 
         <Suspense fallback={<LoadingScreen />}>
-          {activeTab === 'chemistry' && <ChemistryLab demoScenario={demoScenario} />}
+          {activeTab === 'chemistry' && <ChemistryLab />}
           {activeTab === 'physics' && <PhysicsLab />}
         </Suspense>
       </main>
@@ -204,24 +209,6 @@ const Lab = () => {
             setIsAIOpen(true);
           }}
         />
-        <DemoMode
-          isOpen={isDemoOpen}
-          onClose={() => {
-            setIsDemoOpen(false);
-            // Clear demo scenario after a delay to prevent glitching
-            setTimeout(() => setDemoScenario(null), 1000);
-          }}
-          onStartDemo={(demoType, scenario) => {
-            // Clear previous demo first
-            setDemoScenario(null);
-            // Small delay to prevent state conflicts
-            setTimeout(() => {
-              setActiveTab(demoType);
-              setDemoScenario(scenario);
-              showToast(`Starting ${scenario?.name || demoType} demo...`, 'info');
-            }, 100);
-          }}
-        />
         <PerformanceMonitor
           isVisible={showPerformance}
           onToggle={() => setShowPerformance(!showPerformance)}
@@ -254,7 +241,8 @@ const Lab = () => {
             }
           }
         }} />
-      )}
+      )
+      }
     </div>
   );
 };

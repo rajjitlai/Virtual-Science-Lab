@@ -9,7 +9,7 @@ interface PhysicsLabProps {
 
 export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
     const { showToast } = useToast();
-    const { isDemoRunning } = useDemo();
+    const { isDemoRunning, stopDemo } = useDemo();
     const [gravity, setGravity] = useState(1);
     const [stats, setStats] = useState({ objects: 0, kinetic: 0, potential: 0, total: 0 });
     const [selectedPreset, setSelectedPreset] = useState('Earth');
@@ -120,9 +120,23 @@ export const PhysicsLab = ({ demoScenario }: PhysicsLabProps) => {
                         Explore gravity, motion, and physics through interactive 3D simulations
                     </p>
                     {isDemoRunning && (
-                        <div className="mt-4 inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-4 py-2 rounded-full">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                            <span className="text-sm font-medium">Demo Mode Active</span>
+                        <div className="mt-4 flex items-center justify-center gap-2">
+                            <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-4 py-2 rounded-full">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                                <span className="text-sm font-medium">Demo Mode Active</span>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    stopDemo();
+                                    setDemoObjects([]); // Clear demo objects
+                                    setGravity(1); // Reset gravity
+                                    setSelectedPreset('Earth');
+                                }}
+                                className="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full transition-colors"
+                            >
+                                <span>⏹️</span>
+                                <span className="text-sm font-medium">Stop Demo</span>
+                            </button>
                         </div>
                     )}
                 </div>
