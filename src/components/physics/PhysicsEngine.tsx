@@ -8,7 +8,9 @@ import type { PhysicsObject } from '../../types/physics';
 
 interface PhysicsEngineProps {
     gravity: number;
-    onStatsUpdate: (stats: { objects: number; kinetic: number }) => void;
+    onStatsUpdate: (stats: { objects: number; kinetic: number; potential: number; total: number }) => void;
+    airResistance?: number;
+    friction?: number;
 }
 
 // 3D Physics Objects
@@ -74,10 +76,11 @@ const Platform = ({ position, size }: { position: [number, number, number], size
     );
 };
 
-export const PhysicsEngine = ({ gravity, onStatsUpdate }: PhysicsEngineProps) => {
+export const PhysicsEngine = ({ gravity, onStatsUpdate, airResistance = 0.1, friction = 0.3 }: PhysicsEngineProps) => {
     const [objects, setObjects] = useState<Array<PhysicsObject & { id: string, position: [number, number, number] }>>([]);
     const [isRunning, setIsRunning] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [selectedObjectType, setSelectedObjectType] = useState<string | null>(null);
 
     useEffect(() => {
         // Add initial ball
@@ -106,16 +109,26 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate }: PhysicsEngineProps) =>
             ] as [number, number, number]
         };
         setObjects(prev => [...prev, newObj]);
+        setSelectedObjectType(obj.id);
         console.log(`Added ${obj.type} with color ${obj.color} and size ${newObj.size}`);
     };
 
     const clearObjects = () => {
         setObjects([]);
+        setSelectedObjectType(null);
     };
 
     const togglePause = () => {
         setIsRunning(!isRunning);
     };
+
+    // Update stats when objects change
+    useEffect(() => {
+        const kinetic = objects.length * 10; // Simplified kinetic energy calculation
+        const potential = objects.length * gravity * 9.81 * 5; // Approximate potential energy
+        const total = kinetic + potential;
+        onStatsUpdate({ objects: objects.length, kinetic, potential, total });
+    }, [objects.length, gravity, onStatsUpdate]);
 
     return (
         <div className="space-y-4">
@@ -213,34 +226,96 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate }: PhysicsEngineProps) =>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {PHYSICS_OBJECTS.map((obj) => (
-                    <button
-                        key={obj.id}
-                        onClick={() => addObject(obj)}
-                        disabled={!isInitialized}
-                        className="p-4 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-500 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <div className="flex flex-col items-center gap-2">
-                            <div
-                                className={`${obj.type === 'ball' ? 'rounded-full' : 'rounded-md'}`}
-                                style={{
-                                    width: `${obj.size / 2}px`,
-                                    height: `${obj.size / 2}px`,
-                                    backgroundColor: obj.color,
-                                }}
-                            />
-                            <div className="text-center">
-                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                    {obj.type === 'ball' ? '⚽' : '📦'} {obj.type}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    Mass: {obj.mass}
-                                </p>
-                            </div>
-                        </div>
-                    </button>
-                ))}
+            {/* Object Selection */}
+            <div className="space-y-4">
+                <div className="text-center">
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1">
+                        🎯 Add Objects to Simulation
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-xs">
+                        Click on any object below to add it to the physics simulation
+                    </p>
+                </div>
+
+                {/* Balls Section */}
+                <div className="space-y-2">
+                    <h4 className="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                        <span className="text-lg">⚽</span>
+                        Spheres
+                    </h4>
+                    <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                        {PHYSICS_OBJECTS.filter(obj => obj.type === 'ball').map((obj) => (
+                            <button
+                                key={obj.id}
+                                onClick={() => addObject(obj)}
+                                disabled={!isInitialized}
+                                className={`p-3 rounded-lg border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${selectedObjectType === obj.id
+                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900 shadow-md'
+                                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-indigo-400 hover:shadow-sm'
+                                    }`}
+                            >
+                                <div className="flex flex-col items-center gap-2">
+                                    <div
+                                        className="rounded-full shadow-sm border border-white"
+                                        style={{
+                                            width: `${Math.max(obj.size / 4, 20)}px`,
+                                            height: `${Math.max(obj.size / 4, 20)}px`,
+                                            backgroundColor: obj.color,
+                                        }}
+                                    />
+                                    <div className="text-center">
+                                        <p className="text-xs font-bold text-gray-800 dark:text-white">
+                                            {obj.id.includes('small') ? 'S' : obj.id.includes('medium') ? 'M' : 'L'}
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500">
+                                            {obj.mass}kg
+                                        </p>
+                                    </div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Boxes Section */}
+                <div className="space-y-2">
+                    <h4 className="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                        <span className="text-lg">📦</span>
+                        Boxes
+                    </h4>
+                    <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                        {PHYSICS_OBJECTS.filter(obj => obj.type === 'box').map((obj) => (
+                            <button
+                                key={obj.id}
+                                onClick={() => addObject(obj)}
+                                disabled={!isInitialized}
+                                className={`p-3 rounded-lg border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${selectedObjectType === obj.id
+                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900 shadow-md'
+                                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-indigo-400 hover:shadow-sm'
+                                    }`}
+                            >
+                                <div className="flex flex-col items-center gap-2">
+                                    <div
+                                        className="rounded-md shadow-sm border border-white"
+                                        style={{
+                                            width: `${Math.max(obj.size / 4, 20)}px`,
+                                            height: `${Math.max(obj.size / 4, 20)}px`,
+                                            backgroundColor: obj.color,
+                                        }}
+                                    />
+                                    <div className="text-center">
+                                        <p className="text-xs font-bold text-gray-800 dark:text-white">
+                                            {obj.id.includes('small') ? 'S' : obj.id.includes('medium') ? 'M' : 'L'}
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-500">
+                                            {obj.mass}kg
+                                        </p>
+                                    </div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

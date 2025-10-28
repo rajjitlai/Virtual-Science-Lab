@@ -13,7 +13,7 @@ interface RobotAssistantProps {
 }
 
 export const RobotAssistant = ({
-    position = [3, -0.5, 2],
+    position = [4, -0.5, 3], // Moved further from beaker
     isActive = true,
     action = 'idle',
     chemicalToPour,
@@ -86,38 +86,66 @@ export const RobotAssistant = ({
 
         // Whole robot animation for different actions
         if (robotGroupRef.current.position) {
+            let newX = position[0];
+            let newZ = position[2];
+            let newY = position[1];
+
             switch (action) {
                 case 'reacting':
-                    robotGroupRef.current.position.z = position[2] + Math.max(0, Math.sin(time * 3) * 0.3);
-                    robotGroupRef.current.position.x = position[0];
+                    newZ = position[2] + Math.max(0, Math.sin(time * 3) * 0.3);
+                    newX = position[0];
                     break;
                 case 'running':
-                    // Running in a circular pattern
-                    const radius = 3;
-                    const speed = 0.5;
+                    // Running in a figure-8 pattern away from beaker
+                    const radius = 4;
+                    const speed = 0.3;
                     const angle = time * speed;
-                    robotGroupRef.current.position.x = position[0] + Math.cos(angle) * radius;
-                    robotGroupRef.current.position.z = position[2] + Math.sin(angle) * radius;
-                    robotGroupRef.current.position.y = position[1] + Math.sin(time * 8) * 0.15;
+                    // Create figure-8 pattern with offset to avoid beaker area (0,0,0)
+                    const figure8X = Math.sin(angle) * radius;
+                    const figure8Z = Math.sin(angle * 2) * (radius * 0.5);
+                    // Offset the pattern to keep robot away from beaker
+                    newX = position[0] + figure8X + 2; // Move further from beaker
+                    newZ = position[2] + figure8Z + 3; // Move further from beaker
+                    newY = position[1] + Math.sin(time * 8) * 0.15;
                     // Face the direction of movement
                     robotGroupRef.current.rotation.y = angle + Math.PI / 2;
                     break;
                 case 'walking':
-                    // Walking in a smaller circular pattern
-                    const walkRadius = 2;
-                    const walkSpeed = 0.2;
+                    // Walking in a rectangular pattern away from beaker
+                    const walkWidth = 3;
+                    const walkLength = 2;
+                    const walkSpeed = 0.15;
                     const walkAngle = time * walkSpeed;
-                    robotGroupRef.current.position.x = position[0] + Math.cos(walkAngle) * walkRadius;
-                    robotGroupRef.current.position.z = position[2] + Math.sin(walkAngle) * walkRadius;
-                    robotGroupRef.current.position.y = position[1] + Math.sin(time * 6) * 0.1;
+                    // Create rectangular walking pattern
+                    const rectX = Math.cos(walkAngle) * walkWidth;
+                    const rectZ = Math.sin(walkAngle) * walkLength;
+                    // Offset to avoid beaker area
+                    newX = position[0] + rectX + 2.5; // Keep away from beaker
+                    newZ = position[2] + rectZ + 2.5; // Keep away from beaker
+                    newY = position[1] + Math.sin(time * 6) * 0.1;
                     // Face the direction of movement
                     robotGroupRef.current.rotation.y = walkAngle + Math.PI / 2;
                     break;
                 default:
-                    robotGroupRef.current.position.x = position[0];
-                    robotGroupRef.current.position.z = position[2];
-                    robotGroupRef.current.position.y = position[1];
+                    newX = position[0];
+                    newZ = position[2];
+                    newY = position[1];
             }
+
+            // Safety check: ensure robot never gets too close to beaker (within 2 units of 0,0,0)
+            const distanceFromBeaker = Math.sqrt(newX * newX + newZ * newZ);
+            const minDistance = 2.5; // Minimum distance from beaker
+
+            if (distanceFromBeaker < minDistance) {
+                // Push robot away from beaker
+                const angle = Math.atan2(newZ, newX);
+                newX = Math.cos(angle) * minDistance;
+                newZ = Math.sin(angle) * minDistance;
+            }
+
+            robotGroupRef.current.position.x = newX;
+            robotGroupRef.current.position.z = newZ;
+            robotGroupRef.current.position.y = newY;
         }
     });
 

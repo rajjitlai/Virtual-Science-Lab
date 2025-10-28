@@ -6,7 +6,7 @@ import { Beaker } from './Beaker';
 import { FireBeaker } from './FireBeaker';
 import { ReactionResult } from './ReactionResult';
 import { FlowchartCanvas } from './FlowchartCanvas';
-import { SplineRobot } from './SplineRobot';
+import { RobotAssistant } from './RobotAssistant';
 import type { ReactionProduct, Chemical, Reaction, RobotAction } from '../../types/chemistry';
 
 interface ChemistrySceneProps {
@@ -122,6 +122,20 @@ export const ChemistryScene = ({ liquidColor, liquidLevel, showBubbles, reaction
                                         />
                                     )}
                                 </ErrorBoundary>
+
+                                {/* Robot Assistant inside the 3D scene */}
+                                {showRobot && (
+                                    <ErrorBoundary>
+                                        <RobotAssistant
+                                            position={[4, -0.5, 3]}
+                                            isActive={showRobot}
+                                            action={robotAction}
+                                            chemicalToPour={selectedChemicals.length > 0 ? selectedChemicals[selectedChemicals.length - 1]?.name : undefined}
+                                            liquidColor={liquidColor}
+                                        />
+                                    </ErrorBoundary>
+                                )}
+
                                 <Environment preset="sunset" />
                             </Suspense>
 
@@ -134,22 +148,40 @@ export const ChemistryScene = ({ liquidColor, liquidLevel, showBubbles, reaction
                             </mesh>
                         </Canvas>
                     </ErrorBoundary>
+
+                    {/* AI Response Overlay */}
+                    {aiResponse && (
+                        <div className="absolute bottom-4 left-4 right-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="text-lg">🤖</span>
+                                <span className="font-semibold text-gray-800 dark:text-white">Robot Assistant</span>
+                                <div className={`ml-auto px-2 py-1 rounded-full text-xs font-medium ${robotAction === 'idle' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' :
+                                    robotAction === 'pouring' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                                        robotAction === 'observing' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                                            robotAction === 'reacting' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                                                robotAction === 'celebrating' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                                                    robotAction === 'running' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
+                                                        robotAction === 'walking' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200' :
+                                                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                                    }`}>
+                                    <span className="mr-1">
+                                        {robotAction === 'idle' ? '😴' :
+                                            robotAction === 'pouring' ? '🥤' :
+                                                robotAction === 'observing' ? '👀' :
+                                                    robotAction === 'reacting' ? '⚡' :
+                                                        robotAction === 'celebrating' ? '🎉' :
+                                                            robotAction === 'running' ? '🏃' :
+                                                                robotAction === 'walking' ? '🚶' : '🤖'}
+                                    </span>
+                                    <span className="capitalize">{robotAction}</span>
+                                </div>
+                            </div>
+                            <p className="text-gray-700 dark:text-gray-300 text-sm">{aiResponse}</p>
+                        </div>
+                    )}
                 </>
             )}
 
-            {/* Spline Robot Section */}
-            {showRobot && (
-                <div className="mt-6">
-                    <ErrorBoundary>
-                        <SplineRobot
-                            isActive={showRobot}
-                            action={robotAction}
-                            aiResponse={aiResponse}
-                            className="w-full"
-                        />
-                    </ErrorBoundary>
-                </div>
-            )}
         </div>
     );
 };

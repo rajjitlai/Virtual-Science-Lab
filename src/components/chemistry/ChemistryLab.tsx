@@ -388,25 +388,25 @@ Respond ONLY with JSON in this format:
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header Section */}
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">
+                <div className="text-center mb-6">
+                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
                         🧪 Virtual Chemistry Lab
                     </h1>
-                    <p className="text-lg text-gray-600 dark:text-gray-300">
+                    <p className="text-base text-gray-600 dark:text-gray-300">
                         Experiment with chemicals, observe reactions, and learn chemistry interactively
                     </p>
                 </div>
 
                 {/* Main Lab Section */}
-                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
-                            <span className="text-3xl">🔬</span>
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                            <span className="text-2xl">🔬</span>
                             Laboratory Workspace
                         </h2>
                         <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${showRobot ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                            <span className="text-sm text-gray-600 dark:text-gray-300">
+                            <div className={`w-2 h-2 rounded-full ${showRobot ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                            <span className="text-xs text-gray-600 dark:text-gray-300">
                                 {showRobot ? 'Robot Active' : 'Robot Inactive'}
                             </span>
                         </div>
@@ -550,21 +550,41 @@ Respond ONLY with JSON in this format:
                                 Current Mixture ({selectedChemicals.length} chemicals)
                             </h4>
                             <div className="flex flex-wrap gap-2">
-                                {selectedChemicals.map((chemical) => (
-                                    <div
-                                        key={chemical.id}
-                                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white shadow-md"
-                                        style={{ backgroundColor: chemical.color }}
-                                    >
-                                        <span>{chemical.name}</span>
-                                        <button
-                                            onClick={() => handleRemoveChemical(chemical.id)}
-                                            className="hover:bg-white hover:bg-opacity-20 rounded-full p-1 transition-colors"
+                                {selectedChemicals.map((chemical) => {
+                                    // Function to determine if background is light or dark
+                                    const getTextColor = (backgroundColor: string) => {
+                                        // Convert hex to RGB
+                                        const hex = backgroundColor.replace('#', '');
+                                        const r = parseInt(hex.substr(0, 2), 16);
+                                        const g = parseInt(hex.substr(2, 2), 16);
+                                        const b = parseInt(hex.substr(4, 2), 16);
+
+                                        // Calculate luminance
+                                        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+                                        // Return dark text for light backgrounds, light text for dark backgrounds
+                                        return luminance > 0.5 ? 'text-gray-900' : 'text-white';
+                                    };
+
+                                    const textColor = getTextColor(chemical.color);
+                                    const buttonHoverColor = textColor === 'text-gray-900' ? 'hover:bg-gray-800 hover:bg-opacity-20' : 'hover:bg-white hover:bg-opacity-20';
+
+                                    return (
+                                        <div
+                                            key={chemical.id}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-md ${textColor}`}
+                                            style={{ backgroundColor: chemical.color }}
                                         >
-                                            ✕
-                                        </button>
-                                    </div>
-                                ))}
+                                            <span>{chemical.name}</span>
+                                            <button
+                                                onClick={() => handleRemoveChemical(chemical.id)}
+                                                className={`${buttonHoverColor} rounded-full p-1 transition-colors`}
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
@@ -572,6 +592,26 @@ Respond ONLY with JSON in this format:
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         {CHEMICALS.map((chemical) => {
                             const isSelected = selectedChemicals.some(c => c.id === chemical.id);
+
+                            // Function to determine if background is light or dark
+                            const getTextColor = (backgroundColor: string) => {
+                                // Convert hex to RGB
+                                const hex = backgroundColor.replace('#', '');
+                                const r = parseInt(hex.substr(0, 2), 16);
+                                const g = parseInt(hex.substr(2, 2), 16);
+                                const b = parseInt(hex.substr(4, 2), 16);
+
+                                // Calculate luminance
+                                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+                                // Return dark text for light backgrounds, light text for dark backgrounds
+                                return luminance > 0.5 ? 'text-gray-900' : 'text-white';
+                            };
+
+                            const textColor = isSelected ? getTextColor(chemical.color) : 'text-gray-800 dark:text-white';
+                            const secondaryTextColor = isSelected ? (getTextColor(chemical.color) === 'text-gray-900' ? 'text-gray-700' : 'text-gray-200') : 'text-gray-600 dark:text-gray-400';
+                            const detailTextColor = isSelected ? (getTextColor(chemical.color) === 'text-gray-900' ? 'text-gray-600' : 'text-gray-300') : 'text-gray-500 dark:text-gray-500';
+
                             return (
                                 <button
                                     key={chemical.id}
@@ -590,13 +630,13 @@ Respond ONLY with JSON in this format:
                                             className="w-8 h-8 mx-auto mb-2 rounded-full border-2 border-white shadow-md"
                                             style={{ backgroundColor: chemical.color }}
                                         ></div>
-                                        <p className="font-bold text-gray-800 dark:text-white text-sm mb-1">
+                                        <p className={`font-bold text-sm mb-1 ${textColor}`}>
                                             {chemical.name}
                                         </p>
-                                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                        <p className={`text-xs mb-1 ${secondaryTextColor}`}>
                                             {chemical.formula}
                                         </p>
-                                        <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-500">
+                                        <div className={`flex items-center justify-center gap-2 text-xs ${detailTextColor}`}>
                                             <span className="capitalize">{chemical.state}</span>
                                             <span>•</span>
                                             <span>pH: {chemical.pH}</span>
