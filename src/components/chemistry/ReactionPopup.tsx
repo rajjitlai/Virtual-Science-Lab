@@ -12,7 +12,7 @@ interface ReactionPopupProps {
     reaction: Reaction | null;
 }
 
-export const ReactionPopup = ({ isOpen, onClose, selectedChemicals, reaction }: ReactionPopupProps) => {
+export const ReactionPopup = ({ isOpen, onClose, selectedChemicals: _selectedChemicals, reaction: _reaction }: ReactionPopupProps) => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {

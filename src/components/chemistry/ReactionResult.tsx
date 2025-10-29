@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { ChemicalFormula } from './ChemicalFormula';
-import type { ReactionProduct } from '../../types/chemistry';
+import type { Chemical, Reaction, ReactionProduct } from '../../types/chemistry';
 import { ReactionPopup } from './ReactionPopup';
-import { useDemo } from '../../contexts/DemoContext';
 
 interface ReactionResultProps {
     product: ReactionProduct | null;
@@ -16,21 +14,6 @@ export const ReactionResult = ({ product, onVisualize, selectedChemicals, reacti
     const [showName, setShowName] = useState(false);
     const [showFormula, setShowFormula] = useState(true); // Show formula by default
     const [showDemoPopup, setShowDemoPopup] = useState(false);
-    const { startChemistryDemo } = useDemo();
-
-    const handleStartDemo = () => {
-        // Create demo scenario
-        const demoScenario = {
-            name: `${product?.name} Reaction`,
-            description: reaction?.description || "Chemical reaction demonstration",
-            chemicals: selectedChemicals.map(c => c.name),
-            duration: 30000,
-            reaction: reaction // Pass the reaction data
-        };
-
-        startChemistryDemo(demoScenario);
-        if (onVisualize) onVisualize(); // Call visualization handler
-    };
 
     if (!product) return null;
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Physics, useBox, useSphere, usePlane } from '@react-three/cannon';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { PHYSICS_OBJECTS } from '../../types/physics';
 import { useAppwrite } from '../../contexts/AppwriteContext';
 import type { PhysicsObject } from '../../types/physics';
@@ -112,7 +112,7 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate, demoObjects = [] }: Phys
         setObjects(prev => [...prev, newObj]);
         setSelectedObjectType(obj.id);
         console.log(`Added ${obj.type} with color ${obj.color} and size ${newObj.size}`);
-        
+
         // Increment experiments count when an object is added
         incrementExperimentsCount().catch(error => {
             console.error('Error incrementing experiments count:', error);
@@ -338,7 +338,7 @@ export const PhysicsEngine = ({ gravity, onStatsUpdate, demoObjects = [] }: Phys
                                 </group>
                             </group>
 
-                            <Environment preset="sunset" />
+                            {/* Removed remote HDR Environment to avoid 429 fetch errors */}
                         </Canvas>
                     )}
 

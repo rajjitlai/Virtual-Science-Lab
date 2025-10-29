@@ -88,7 +88,7 @@ export const MobileNav = ({
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => {
-                                    onHistoryClick();
+                                    onHistoryClick?.();
                                     setIsMenuOpen(false);
                                 }}
                                 className="flex items-center justify-center gap-2 px-3 py-2 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-lg text-sm font-medium"
@@ -97,7 +97,7 @@ export const MobileNav = ({
                             </button>
                             <button
                                 onClick={() => {
-                                    onAnalyticsClick();
+                                    onAnalyticsClick?.();
                                     setIsMenuOpen(false);
                                 }}
                                 className="flex items-center justify-center gap-2 px-3 py-2 bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded-lg text-sm font-medium"
@@ -106,7 +106,7 @@ export const MobileNav = ({
                             </button>
                             <button
                                 onClick={() => {
-                                    onDemoClick();
+                                    onDemoClick?.();
                                     setIsMenuOpen(false);
                                 }}
                                 className="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm font-medium"
@@ -115,7 +115,7 @@ export const MobileNav = ({
                             </button>
                             <button
                                 onClick={() => {
-                                    onSettingsClick();
+                                    onSettingsClick?.();
                                     setIsMenuOpen(false);
                                 }}
                                 className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium"

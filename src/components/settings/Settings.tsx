@@ -18,7 +18,7 @@ interface SettingsProps {
 
 export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: SettingsProps) => {
     const { user, logout } = useAuth();
-    const { theme, setTheme } = useTheme();
+    const { theme: _theme, setTheme: _setTheme } = useTheme();
     const { getUserSettings, saveUserSettings, setTourStatus } = useAppwrite();
     const [settings, setSettings] = useState<UserSettings>(initialSettings || DEFAULT_SETTINGS);
     const [activeSection, setActiveSection] = useState<'profile' | 'appearance' | 'preferences' | 'about'>('profile');

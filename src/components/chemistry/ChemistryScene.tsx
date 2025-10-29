@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { Suspense, useState, useEffect } from 'react';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { Beaker } from './Beaker';
@@ -67,10 +67,7 @@ export const ChemistryScene = ({ liquidColor, liquidLevel, showBubbles, reaction
         return () => clearInterval(runInterval);
     }, [showRobot]);
 
-    const handleVisualize = () => {
-        // kept for other direct visualize uses
-        setShowFlowchart(true);
-    };
+    // Removed unused handler to satisfy noUnusedLocals
 
     // START DEMO: now starts the demo in the main canvas
     const handleStartDemo = () => {
@@ -159,7 +156,7 @@ export const ChemistryScene = ({ liquidColor, liquidLevel, showBubbles, reaction
                                         </ErrorBoundary>
                                     )}
 
-                                    <Environment preset="sunset" />
+                                    {/* Removed remote HDR Environment to avoid 429 fetch errors */}
                                 </Suspense>
 
                                 <OrbitControls enableZoom={true} enablePan={true} />
