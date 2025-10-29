@@ -6,13 +6,14 @@ import { ToastProvider, useToast } from './contexts/ToastContext';
 import { AppwriteProvider, useAppwrite } from './contexts/AppwriteContext';
 import { SimulatorProvider } from './contexts/SimulatorContext';
 import { SettingsProvider } from './contexts/SettingsContext';
-import { DemoProvider } from './contexts/DemoContext';
+import { DemoProvider, useDemo } from './contexts/DemoContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LoadingScreen } from './components/common/LoadingScreen';
 import { WelcomeTour } from './components/common/WelcomeTour';
 import { MobileNav } from './components/common/MobileNav';
 import { PerformanceMonitor } from './components/common/PerformanceMonitor';
 import { Analytics } from './components/common/Analytics';
+import { DemoModal } from './components/common/DemoModal';
 import { Login } from './components/auth/Login';
 import { VerificationPage } from './components/auth/VerificationPage';
 import { useState, useEffect, lazy, Suspense } from 'react';
@@ -54,6 +55,7 @@ const Lab = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
   const { getTourStatus, setTourStatus, getUserSettings, saveUserSettings, isCloudStorage } = useAppwrite();
+  const { startDemo } = useDemo();
   const [activeTab, setActiveTab] = useState<'chemistry' | 'physics'>('chemistry');
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -66,6 +68,8 @@ const Lab = () => {
   const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [showPerformance, setShowPerformance] = useState(false);
   const [focusLab, setFocusLab] = useState<'chemistry' | 'physics' | null>(null);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const { currentDemo } = useDemo();
 
   useEffect(() => {
     // Load user settings
@@ -140,6 +144,7 @@ const Lab = () => {
         onHistoryClick={() => setIsHistoryOpen(true)}
         onSettingsClick={() => setIsSettingsOpen(true)}
         onAnalyticsClick={() => setIsAnalyticsOpen(true)}
+        onDemoClick={() => setIsDemoModalOpen(true)}
         userName={user?.name}
       />
 
@@ -173,8 +178,8 @@ const Lab = () => {
         </div>
 
         <Suspense fallback={<LoadingScreen />}>
-          {activeTab === 'chemistry' && <ChemistryLab />}
-          {activeTab === 'physics' && <PhysicsLab />}
+          {activeTab === 'chemistry' && <ChemistryLab demoScenario={currentDemo} />}
+          {activeTab === 'physics' && <PhysicsLab demoScenario={currentDemo} />}
         </Suspense>
       </main>
 
@@ -216,6 +221,15 @@ const Lab = () => {
         <Analytics
           isOpen={isAnalyticsOpen}
           onClose={() => setIsAnalyticsOpen(false)}
+        />
+        <DemoModal
+          isOpen={isDemoModalOpen}
+          onClose={() => setIsDemoModalOpen(false)}
+          onStartDemo={(lab, scenario) => {
+            startDemo(lab, scenario);
+            setActiveTab(lab);
+            showToast('Demo started!', 'success');
+          }}
         />
       </Suspense>
 

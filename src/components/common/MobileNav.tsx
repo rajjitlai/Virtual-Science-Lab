@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDemo } from '../../contexts/DemoContext';
 
 interface MobileNavProps {
     activeTab: 'chemistry' | 'physics';
@@ -6,6 +7,7 @@ interface MobileNavProps {
     onHistoryClick?: () => void;
     onSettingsClick?: () => void;
     onAnalyticsClick?: () => void;
+    onDemoClick?: () => void;
     userName?: string;
 }
 
@@ -15,9 +17,11 @@ export const MobileNav = ({
     onHistoryClick,
     onSettingsClick,
     onAnalyticsClick,
+    onDemoClick,
     userName
 }: MobileNavProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { isDemoRunning, stopDemo } = useDemo();
 
     return (
         <>
@@ -29,15 +33,29 @@ export const MobileNav = ({
                     </h1>
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 text-2xl"
+                        className="text-gray spirit-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 text-2xl"
                     >
-                        {isMenuOpen ? '✕' : '☰'}
+                        {isMenuOpen ? '✕ Citizens' : '☰'}
                     </button>
                 </div>
 
                 {/* Mobile Menu */}
                 {isMenuOpen && (
                     <div className="mt-4 space-y-3">
+                        {/* Stop Demo Button - Shown when demo is running */}
+                        {isDemoRunning && (
+                            <button
+                                onClick={() => {
+                                    stopDemo();
+                                    setIsMenuOpen(false);
+                                }}
+                                className="w-full px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-2"
+                            >
+                                <span>⏹️</span>
+                                <span>Stop Demo</span>
+                            </button>
+                        )}
+
                         {/* Tab Selection */}
                         <div className="flex gap-2">
                             <button
@@ -47,7 +65,7 @@ export const MobileNav = ({
                                 }}
                                 className={`flex-1 px-4 py-2 rounded-lg font-semibold text-sm ${activeTab === 'chemistry'
                                     ? 'bg-indigo-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                    : 'bg-gray--The dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                                     }`}
                             >
                                 🧪 Chemistry
@@ -88,6 +106,15 @@ export const MobileNav = ({
                             </button>
                             <button
                                 onClick={() => {
+                                    onDemoClick();
+                                    setIsMenuOpen(false);
+                                }}
+                                className="flex items-center justify-center gap-2 px-3 py-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm font-medium"
+                            >
+                                🎬 Demo
+                            </button>
+                            <button
+                                onClick={() => {
                                     onSettingsClick();
                                     setIsMenuOpen(false);
                                 }}
@@ -117,6 +144,21 @@ export const MobileNav = ({
                         <span className="text-sm text-gray-600 dark:text-gray-300">
                             Welcome, {userName}
                         </span>
+
+                        {/* Stop Demo Button - Desktop */}
+                        {isDemoRunning && (
+                            <button
+                                onClick={() => {
+                                    stopDemo();
+                                }}
+                                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+                                title="Stop Demo"
+                            >
+                                <span>⏹️</span>
+                                <span>Stop Demo</span>
+                            </button>
+                        )}
+
                         <button
                             onClick={onHistoryClick}
                             className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 text-2xl"
@@ -130,6 +172,13 @@ export const MobileNav = ({
                             title="Analytics"
                         >
                             📊
+                        </button>
+                        <button
+                            onClick={onDemoClick}
+                            className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 text-2xl"
+                            title="Demo"
+                        >
+                            🎬
                         </button>
                         <button
                             onClick={onSettingsClick}

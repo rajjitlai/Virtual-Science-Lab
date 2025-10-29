@@ -7,15 +7,18 @@ import { callGemmaModel } from '../../config/ai-service';
 import { useAppwrite } from '../../contexts/AppwriteContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useSimulator } from '../../contexts/SimulatorContext';
+import { useDemo } from '../../contexts/DemoContext';
 import { playBeep, playBubblesSound, playReactionSound, playResetSound } from '../../utils/sound';
 
 interface ChemistryLabProps {
+    demoScenario?: any;
 }
 
-export const ChemistryLab = ({ }: ChemistryLabProps) => {
+export const ChemistryLab = ({ demoScenario }: ChemistryLabProps) => {
     const { loadMixtures, saveMixture, incrementExperimentsCount } = useAppwrite();
     const { showToast } = useToast();
     const { pendingChemicals, clearPendingChemicals } = useSimulator();
+    const { isDemoRunning, stopDemo, getDemoChemicals } = useDemo();
     const [selectedChemicals, setSelectedChemicals] = useState<Chemical[]>([]);
     const [liquidColor, setLiquidColor] = useState('#00aaff');
     const [liquidLevel, setLiquidLevel] = useState(0.25);
@@ -29,6 +32,48 @@ export const ChemistryLab = ({ }: ChemistryLabProps) => {
     const [recentMixtures, setRecentMixtures] = useState<Mixture[]>([]);
     const [isAIProcessing, setIsAIProcessing] = useState(false);
     const [aiResponse, setAiResponse] = useState<string>('');
+
+    // Handle demo scenarios
+    useEffect(() => {
+        if (demoScenario && isDemoRunning) {
+            const demoChemicals = getDemoChemicals();
+            if (demoChemicals.length > 0) {
+                // Reset beaker
+                setSelectedChemicals([]);
+                setLiquidColor('#00aaff');
+                setLiquidLevel(0.25);
+                setShowBubbles(false);
+                setFireIntensity(0);
+
+                // Add chemicals from demo with delay
+                const timeouts: NodeJS.Timeout[] = [];
+                demoChemicals.forEach((chemical, index) => {
+                    const timeout = setTimeout(() => {
+                        const newSelection = [...demoChemicals.slice(0, index + 1)];
+                        setSelectedChemicals(newSelection);
+                        setLiquidLevel(Math.min(0.25 + (newSelection.length * 0.25), 1.0));
+
+                        if (newSelection.length > 1) {
+                            const mixedColor = mixColors(newSelection[0].color, chemical.color);
+                            setLiquidColor(mixedColor);
+                        } else {
+                            setLiquidColor(chemical.color);
+                        }
+
+                        // Check for reactions
+                        checkReaction(newSelection);
+                    }, index * 1500);
+                    timeouts.push(timeout);
+                });
+
+                showToast(`Demo started: ${demoScenario.name}`, 'info');
+
+                // Cleanup timeouts on unmount
+                return () => timeouts.forEach(clearTimeout);
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [demoScenario]);
 
     // Load recent mixtures from Appwrite
     useEffect(() => {
@@ -402,12 +447,32 @@ Respond ONLY with JSON in this format:
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header Section */}
                 <div className="text-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-                        🧪 Virtual Chemistry Lab
-                    </h1>
-                    <p className="text-base text-gray-600 dark:text-gray-300">
+                    <div className="flex items-center justify-center gap-4 mb-4">
+                        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+                            🧪 Virtual Chemistry Lab
+                        </h1>
+                    </div>
+                    <p className="text-base text-gray-600 dark:text-gray-300 mb-4">
                         Experiment with chemicals, observe reactions, and learn chemistry interactively
                     </p>
+                    {isDemoRunning && (
+                        <div className="flex items-center justify-center gap-2">
+                            <div className="inline-flex items-center gap-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-4 py-2 rounded-full">
+                                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+                                <span className="text-sm font-medium">Demo Mode Active</span>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    stopDemo();
+                                    handleReset();
+                                }}
+                                className="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full transition-colors"
+                            >
+                                <span>⏹️</span>
+                                <span className="text-sm font-medium">Stop Demo</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Main Lab Section */}

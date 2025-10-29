@@ -5,7 +5,10 @@ import type { Chemical } from '../types/chemistry';
 interface DemoContextType {
     isDemoRunning: boolean;
     currentDemo: any | null;
+    activeLab: 'chemistry' | 'physics' | null;
     startChemistryDemo: (scenario: any) => void;
+    startPhysicsDemo: (scenario: any) => void;
+    startDemo: (lab: 'chemistry' | 'physics', scenario: any) => void;
     stopDemo: () => void;
     getDemoChemicals: () => Chemical[];
 }
@@ -27,15 +30,32 @@ interface DemoProviderProps {
 export const DemoProvider = ({ children }: DemoProviderProps) => {
     const [isDemoRunning, setIsDemoRunning] = useState(false);
     const [currentDemo, setCurrentDemo] = useState<any | null>(null);
+    const [activeLab, setActiveLab] = useState<'chemistry' | 'physics' | null>(null);
 
     const startChemistryDemo = (scenario: any) => {
         setIsDemoRunning(true);
         setCurrentDemo(scenario);
+        setActiveLab('chemistry');
+    };
+
+    const startPhysicsDemo = (scenario: any) => {
+        setIsDemoRunning(true);
+        setCurrentDemo(scenario);
+        setActiveLab('physics');
+    };
+
+    const startDemo = (lab: 'chemistry' | 'physics', scenario: any) => {
+        if (lab === 'chemistry') {
+            startChemistryDemo(scenario);
+        } else {
+            startPhysicsDemo(scenario);
+        }
     };
 
     const stopDemo = () => {
         setIsDemoRunning(false);
         setCurrentDemo(null);
+        setActiveLab(null);
     };
 
     const getDemoChemicals = (): Chemical[] => {
@@ -77,7 +97,10 @@ export const DemoProvider = ({ children }: DemoProviderProps) => {
         <DemoContext.Provider value={{
             isDemoRunning,
             currentDemo,
+            activeLab,
             startChemistryDemo,
+            startPhysicsDemo,
+            startDemo,
             stopDemo,
             getDemoChemicals
         }}>
