@@ -418,14 +418,54 @@ Here are all the chemicals you can use with \`/simulate\`:
         }
     };
 
+    // Enhanced function to normalize chemical names
+    const normalizeChemicalName = (name: string): string => {
+        // Convert common names to match our chemical IDs
+        const nameMap: { [key: string]: string } = {
+            'baking soda': 'baking-soda',
+            'table salt': 'salt',
+            'lemon juice': 'lemon-juice'
+        };
+        
+        const normalizedName = name.toLowerCase().trim();
+        return nameMap[normalizedName] || normalizedName;
+    };
+
+    // Enhanced function to find chemicals
+    const findChemicalsInText = (text: string): string[] => {
+        const chemicalNames = text.split(/[,\s+and]+/).map(name => name.trim()).filter(Boolean);
+        const validChemicals: string[] = [];
+        
+        chemicalNames.forEach(name => {
+            const normalizedName = normalizeChemicalName(name);
+            const match = CHEMICALS.some(c => 
+                c.name.toLowerCase() === normalizedName || 
+                c.id.toLowerCase() === normalizedName
+            );
+            
+            if (match) {
+                const chemical = CHEMICALS.find(c => 
+                    c.name.toLowerCase() === normalizedName || 
+                    c.id.toLowerCase() === normalizedName
+                );
+                if (chemical) {
+                    validChemicals.push(chemical.id);
+                }
+            }
+        });
+        
+        return [...new Set(validChemicals)]; // Remove duplicates
+    };
+
     const parseReactionButton = (content: string) => {
         // Check for /simulate command first
         const simulateMatch = content.match(/\/simulate\s+(.+)/i);
         if (simulateMatch) {
             const chemicalText = simulateMatch[1];
-            // Parse chemicals from the text after /simulate
-            const chemicalNames = chemicalText.split(/[,\s+and]+/).map(name => name.trim()).filter(Boolean);
-            return chemicalNames;
+            const validChemicals = findChemicalsInText(chemicalText);
+            if (validChemicals.length > 0) {
+                return validChemicals;
+            }
         }
 
         // Check for just /simulate without chemicals
@@ -433,9 +473,119 @@ Here are all the chemicals you can use with \`/simulate\`:
             return ['help']; // Special case for help
         }
 
+        // Check for AI response with embedded "[Test ... in Simulator]" text
+        // This handles cases where the AI says something like "You can [Test vinegar and baking soda in Simulator]"
+        const testSimulatorMatch = content.match(/\[Test\s+(.+?)\s+in\s+Simulator\]/i);
+        if (testSimulatorMatch) {
+            const chemicalText = testSimulatorMatch[1];
+            const validChemicals = findChemicalsInText(chemicalText);
+            if (validChemicals.length > 0) {
+                return validChemicals;
+            }
+        }
+
+        // Check for natural language requests to simulate
+        // Look for phrases like "simulate", "test", "try", "experiment with", etc. followed by chemical names
+        const simulationRequestMatch = content.match(/(?:simulate|test|try|experiment with|mix|combine)\s+(.+?)(?:\?|\.|$)/i);
+        if (simulationRequestMatch) {
+            const chemicalText = simulationRequestMatch[1];
+            const validChemicals = findChemicalsInText(chemicalText);
+            if (validChemicals.length > 0) {
+                return validChemicals;
+            }
+        }
+
+        // Check for common chemistry terms and map them to appropriate chemicals
+        // Handle titration examples
+        if (content.toLowerCase().includes('titration')) {
+            // Look for specific chemicals mentioned in the context of titration
+            const chemicalMatches = content.match(/(?:titration)(?:.*?)([a-zA-Z\s]+(?:and\s+[a-zA-Z\s]+)*?)(?:reaction|experiment|test|simulation)/i) ||
+                                  content.match(/(?:titration)(?:.*?)([a-zA-Z\s]+(?:and\s+[a-zA-Z\s]+)*)/i);
+            
+            if (chemicalMatches && chemicalMatches[1]) {
+                const chemicalText = chemicalMatches[1];
+                const validChemicals = findChemicalsInText(chemicalText);
+                if (validChemicals.length > 0) {
+                    return validChemicals;
+                }
+            }
+            
+            // Common titration examples - acid-base titrations
+            if (content.toLowerCase().includes('acid') && content.toLowerCase().includes('base')) {
+                // Acid-base titration example
+                return ['vinegar', 'baking-soda']; // Acetic acid and sodium bicarbonate
+            } else if (content.toLowerCase().includes('acid')) {
+                // Acid titration
+                return ['vinegar', 'baking-soda'];
+            } else if (content.toLowerCase().includes('base')) {
+                // Base titration
+                return ['baking-soda', 'vinegar'];
+            } else {
+                // Default titration example
+                return ['vinegar', 'baking-soda'];
+            }
+        }
+
+        // Handle other common chemistry examples
+        if (content.toLowerCase().includes('neutralization')) {
+            // Look for specific chemicals mentioned in the context of neutralization
+            const chemicalMatches = content.match(/(?:neutralization)(?:.*?)([a-zA-Z\s]+(?:and\s+[a-zA-Z\s]+)*?)(?:reaction|experiment|test|simulation)/i) ||
+                                  content.match(/(?:neutralization)(?:.*?)([a-zA-Z\s]+(?:and\s+[a-zA-Z\s]+)*)/i);
+            
+            if (chemicalMatches && chemicalMatches[1]) {
+                const chemicalText = chemicalMatches[1];
+                const validChemicals = findChemicalsInText(chemicalText);
+                if (validChemicals.length > 0) {
+                    return validChemicals;
+                }
+            }
+            
+            return ['vinegar', 'baking-soda'];
+        }
+        
+        if (content.toLowerCase().includes('combustion')) {
+            // Look for specific chemicals mentioned in the context of combustion
+            const chemicalMatches = content.match(/(?:combustion)(?:.*?)([a-zA-Z\s]+(?:and\s+[a-zA-Z\s]+)*?)(?:reaction|experiment|test|simulation)/i) ||
+                                  content.match(/(?:combustion)(?:.*?)([a-zA-Z\s]+(?:and\s+[a-zA-Z\s]+)*)/i);
+            
+            if (chemicalMatches && chemicalMatches[1]) {
+                const chemicalText = chemicalMatches[1];
+                const validChemicals = findChemicalsInText(chemicalText);
+                if (validChemicals.length > 0) {
+                    return validChemicals;
+                }
+            }
+            
+            return ['methane']; // Default combustion
+        }
+        
+        if (content.toLowerCase().includes('dissolution') || content.toLowerCase().includes('dissolve')) {
+            // Check what is being dissolved
+            if (content.toLowerCase().includes('salt')) {
+                return ['water', 'salt'];
+            } else if (content.toLowerCase().includes('sugar')) {
+                return ['water', 'sugar'];
+            } else {
+                // Look for specific chemicals mentioned in the context of dissolution
+                const chemicalMatches = content.match(/(?:dissolution|dissolve)(?:.*?)([a-zA-Z\s]+(?:and\s+[a-zA-Z\s]+)*?)(?:reaction|experiment|test|simulation)/i) ||
+                                      content.match(/(?:dissolution|dissolve)(?:.*?)([a-zA-Z\s]+(?:and\s+[a-zA-Z\s]+)*)/i);
+                
+                if (chemicalMatches && chemicalMatches[1]) {
+                    const chemicalText = chemicalMatches[1];
+                    const validChemicals = findChemicalsInText(chemicalText);
+                    if (validChemicals.length > 0) {
+                        return validChemicals;
+                    }
+                }
+                
+                // Default dissolution
+                return ['water', 'salt'];
+            }
+        }
+
         // Check if the message mentions specific chemical reactions
         const reactionPatterns = [
-            { chemicals: ['vinegar', 'baking soda'], regex: /vinegar.*baking soda|baking soda.*vinegar/i },
+            { chemicals: ['vinegar', 'baking-soda'], regex: /vinegar.*baking soda|baking soda.*vinegar/i },
             { chemicals: ['water', 'salt'], regex: /salt.*water|water.*salt/i },
             { chemicals: ['water', 'sugar'], regex: /sugar.*water|water.*sugar/i },
             { chemicals: ['ethanol'], regex: /ethanol|alcohol/i },
@@ -453,6 +603,18 @@ Here are all the chemicals you can use with \`/simulate\`:
         return null;
     };
 
+    // Call the test function once when the component mounts
+    useEffect(() => {
+        // Test chemical matching on mount
+        const testNames = ['ethanol', 'water', 'sugar', 'salt', 'vinegar', 'baking soda', 'methane', 'baking-soda'];
+        testNames.forEach(name => {
+            const match = CHEMICALS.some(c => 
+                c.name.toLowerCase() === name.toLowerCase() || 
+                c.id.toLowerCase() === name.toLowerCase()
+            );
+        });
+    }, []);
+
     const quickQuestions = [
         "What happens when vinegar and baking soda mix?",
         "What happens when methane burns?",
@@ -461,6 +623,14 @@ Here are all the chemicals you can use with \`/simulate\`:
         "How does fire work?",
         "/simulate vinegar and baking soda",
         "/simulate water and salt",
+        "Simulate what happens when ethanol mixes with water",
+        "Test the reaction between baking soda and vinegar",
+        "Can you show me how salt dissolves in water?",
+        "What happens if I mix ethanol and water?",
+        "Show me the reaction between methane and oxygen",
+        "Simulate a simple acid-base titration",
+        "Show me a neutralization reaction",
+        "What happens during a combustion reaction?"
     ];
 
     if (!isOpen) return null;
@@ -574,7 +744,17 @@ Here are all the chemicals you can use with \`/simulate\`:
                                     Try simulation commands:
                                 </p>
                                 <div className="flex flex-wrap gap-2">
-                                    {['/simulate vinegar and baking soda', '/simulate water and salt', '/simulate ethanol'].map((command, idx) => (
+                                    {[
+                                        '/simulate vinegar and baking soda', 
+                                        '/simulate water and salt', 
+                                        '/simulate ethanol',
+                                        'Simulate methane and oxygen reaction',
+                                        'Test ethanol burning',
+                                        'What happens when I mix salt and water?',
+                                        'Show me vinegar and baking soda reaction',
+                                        'Simulate a simple titration experiment',
+                                        'Show me a neutralization reaction'
+                                    ].map((command, idx) => (
                                         <button
                                             key={idx}
                                             onClick={() => setInput(command)}
