@@ -213,26 +213,6 @@ export const Settings = ({ isOpen, onClose, initialSettings, onSaveSettings }: S
                                         💡 <strong>Tip:</strong> Keep exploring different experiments to enhance your learning!
                                     </p>
                                 </div>
-
-                                <div className="mt-6 space-y-4">
-                                    <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                                        <h5 className="font-semibold text-gray-800 dark:text-white mb-2">Account Stats</h5>
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <p className="text-gray-600 dark:text-gray-400">Experiments Run</p>
-                                                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                                                    {Math.floor(Math.random() * 50) + 10}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-600 dark:text-gray-400">AI Questions Asked</p>
-                                                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                                                    {Math.floor(Math.random() * 30) + 5}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     )}
