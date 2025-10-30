@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSettings } from '../../contexts/SettingsContext';
 import { useAppwrite } from '../../contexts/AppwriteContext';
 import type { UserAnalytics } from '../../types/settings';
 
@@ -9,7 +8,6 @@ interface AnalyticsProps {
 }
 
 export const Analytics = ({ isOpen, onClose }: AnalyticsProps) => {
-    const { settings } = useSettings();
     const { getUserAnalytics } = useAppwrite();
     const [analytics, setAnalytics] = useState<UserAnalytics>({
         experimentsRun: 0,
