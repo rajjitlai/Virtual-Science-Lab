@@ -13,6 +13,7 @@ interface AIAssistantProps {
     context?: 'chemistry' | 'physics';
     initialMessages?: Message[];
     isContinuedChat?: boolean;
+    sessionId?: string; // Add sessionId prop for continuing chats
 }
 
 interface APIError {
@@ -21,7 +22,7 @@ interface APIError {
     stack?: string;
 }
 
-export const AIAssistant = ({ isOpen, onClose, context, initialMessages, isContinuedChat }: AIAssistantProps) => {
+export const AIAssistant = ({ isOpen, onClose, context, initialMessages, isContinuedChat, sessionId }: AIAssistantProps) => {
     const { saveSession } = useChatHistory();
     const { triggerChemicalReaction } = useSimulator();
     const { incrementAIQuestionsCount } = useAppwrite();
@@ -83,7 +84,7 @@ What would you like to learn today?`,
         // Save session before closing if there are user messages and not already saved
         if (messages.some(m => m.role === 'user') && !hasBeenSaved.current) {
             try {
-                await saveSession(messages, context);
+                await saveSession(messages, context, sessionId); // Pass sessionId for continued chats
                 hasBeenSaved.current = true;
             } catch (error) {
                 console.error('Failed to save chat session:', error);
@@ -164,7 +165,7 @@ ${conversationHistory}
 
 User: ${input}
 
-Assistant:`
+Assistant:`;
 
             const result = await callGemmaModel(fullPrompt);
 
@@ -350,7 +351,7 @@ Assistant:`
         return elements;
     };
 
-    const handleTestInSimulator = (chemicalNames: string[]) => {
+    const handleTestInSimulator = async (chemicalNames: string[]) => {
         // Handle help case
         if (chemicalNames.includes('help')) {
             const helpMessage: Message = {
@@ -397,6 +398,21 @@ Here are all the chemicals you can use with \`/simulate\`:
         });
 
         if (chemicalsToAdd.length > 0) {
+            // Save the session before triggering the simulation
+            if (messages.some(m => m.role === 'user') && !hasBeenSaved.current) {
+                try {
+                    await saveSession([...messages, {
+                        id: (Date.now() + 2).toString(),
+                        role: 'assistant',
+                        content: `🧪 Testing ${chemicalsToAdd.map(c => c.name).join(' + ')} in simulator...`,
+                        timestamp: new Date()
+                    }], context, sessionId); // Pass sessionId for continued chats
+                    hasBeenSaved.current = true;
+                } catch (error) {
+                    console.error('Failed to save chat session before simulation:', error);
+                }
+            }
+            
             triggerChemicalReaction(chemicalsToAdd);
             onClose();
         }

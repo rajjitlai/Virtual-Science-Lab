@@ -1,17 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useChatHistory } from '../../contexts/ChatHistoryContext';
 import type { ChatSession } from '../../types/chat';
 
 interface ChatHistoryProps {
     isOpen: boolean;
     onClose: () => void;
-    onContinueChat?: (session: ChatSession) => void; // Add this prop
+    onContinueChat?: (session: ChatSession) => void;
 }
 
 export const ChatHistory = ({ isOpen, onClose, onContinueChat }: ChatHistoryProps) => {
-    const { sessions, deleteSession, clearAllSessions } = useChatHistory();
+    const { sessions, deleteSession, clearAllSessions, loadSessionsFromAppwrite } = useChatHistory();
     const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    // Load sessions when the component opens
+    useEffect(() => {
+        if (isOpen) {
+            loadSessionsFromAppwrite();
+        }
+    }, [isOpen, loadSessionsFromAppwrite]);
 
     const formatDate = (date: Date) => {
         const now = new Date();
@@ -24,15 +31,19 @@ export const ChatHistory = ({ isOpen, onClose, onContinueChat }: ChatHistoryProp
         return date.toLocaleDateString();
     };
 
-    const handleDelete = (sessionId: string) => {
-        deleteSession(sessionId);
+    const handleDelete = async (sessionId: string) => {
+        await deleteSession(sessionId);
+        // Refresh sessions after deletion
+        await loadSessionsFromAppwrite();
         if (selectedSession?.id === sessionId) {
             setSelectedSession(null);
         }
     };
 
-    const handleClearAll = () => {
-        clearAllSessions();
+    const handleClearAll = async () => {
+        await clearAllSessions();
+        // Refresh sessions after clearing all
+        await loadSessionsFromAppwrite();
         setSelectedSession(null);
         setShowDeleteConfirm(false);
     };

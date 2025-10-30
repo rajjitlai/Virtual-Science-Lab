@@ -18,9 +18,10 @@ import { ID, Query } from 'appwrite';
 
 interface ChatHistoryContextType {
     sessions: ChatSession[];
-    saveSession: (messages: Message[], context?: string) => Promise<void>;
+    saveSession: (messages: Message[], context?: string, sessionId?: string) => Promise<void>;
     deleteSession: (sessionId: string) => Promise<void>;
     clearAllSessions: () => Promise<void>;
+    loadSessionsFromAppwrite: () => Promise<void>;
     isCloudStorage: boolean;
     isLoading: boolean;
 }
@@ -82,7 +83,7 @@ const ChatHistoryProviderComponent = ({ children }: { children: ReactNode }) => 
         }
     };
 
-    const saveSession = async (messages: Message[], context?: string) => {
+    const saveSession = async (messages: Message[], context?: string, sessionId?: string) => {
         if (!isCloudStorage || !user || messages.length <= 1) return; // Don't save if only greeting message
 
         // Generate title from first user message
@@ -94,19 +95,34 @@ const ChatHistoryProviderComponent = ({ children }: { children: ReactNode }) => 
         // Save to Appwrite database in dedicated chat collection
         // Appwrite automatically generates $id and $createdAt fields
         try {
-            await databases.createDocument(
-                import.meta.env.VITE_APPWRITE_DATABASE_ID,
-                import.meta.env.VITE_APPWRITE_CHAT_COLLECTION_ID,
-                ID.unique(),
-                {
-                    userId: user.$id,
-                    title: `${context ? `[${context}] ` : ''}${title}`,
-                    context: context || '',
-                    messages: JSON.stringify(messages),
-                }
-            );
-            // Refresh sessions from Appwrite
-            await loadSessionsFromAppwrite();
+            if (sessionId) {
+                // Update existing document
+                await databases.updateDocument(
+                    import.meta.env.VITE_APPWRITE_DATABASE_ID,
+                    import.meta.env.VITE_APPWRITE_CHAT_COLLECTION_ID,
+                    sessionId,
+                    {
+                        title: `${context ? `[${context}] ` : ''}${title}`,
+                        context: context || '',
+                        messages: JSON.stringify(messages),
+                    }
+                );
+            } else {
+                // Create new document
+                await databases.createDocument(
+                    import.meta.env.VITE_APPWRITE_DATABASE_ID,
+                    import.meta.env.VITE_APPWRITE_CHAT_COLLECTION_ID,
+                    ID.unique(),
+                    {
+                        userId: user.$id,
+                        title: `${context ? `[${context}] ` : ''}${title}`,
+                        context: context || '',
+                        messages: JSON.stringify(messages),
+                    }
+                );
+            }
+            // Note: We're not calling loadSessionsFromAppwrite() here to avoid potential duplicate saves
+            // The sessions will be refreshed when the component re-mounts or when explicitly requested
         } catch (error) {
             console.error('Error saving session to Appwrite:', error);
             throw error;
@@ -123,8 +139,8 @@ const ChatHistoryProviderComponent = ({ children }: { children: ReactNode }) => 
                 import.meta.env.VITE_APPWRITE_CHAT_COLLECTION_ID,
                 sessionId
             );
-            // Refresh sessions from Appwrite
-            await loadSessionsFromAppwrite();
+            // Note: We're not calling loadSessionsFromAppwrite() here to avoid potential issues
+            // The sessions will be refreshed when the component re-mounts or when explicitly requested
         } catch (error) {
             console.error('Error deleting session from Appwrite:', error);
             throw error;
@@ -166,6 +182,7 @@ const ChatHistoryProviderComponent = ({ children }: { children: ReactNode }) => 
             saveSession,
             deleteSession,
             clearAllSessions,
+            loadSessionsFromAppwrite,
             isCloudStorage,
             isLoading
         }}>

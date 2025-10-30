@@ -129,38 +129,6 @@ export const Analytics = ({ isOpen, onClose }: AnalyticsProps) => {
 
                             <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
                                 <h4 className="font-semibold text-gray-800 dark:text-white mb-2">
-                                    Current Settings
-                                </h4>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600 dark:text-gray-400">Theme:</span>
-                                        <span className="text-gray-800 dark:text-white capitalize">
-                                            {settings.theme}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600 dark:text-gray-400">Notifications:</span>
-                                        <span className="text-gray-800 dark:text-white">
-                                            {settings.notifications ? '✅' : '❌'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600 dark:text-gray-400">Sound Effects:</span>
-                                        <span className="text-gray-800 dark:text-white">
-                                            {settings.soundEffects ? '✅' : '❌'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600 dark:text-gray-400">Auto-save:</span>
-                                        <span className="text-gray-800 dark:text-white">
-                                            {settings.autoSaveExperiments ? '✅' : '❌'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-                                <h4 className="font-semibold text-gray-800 dark:text-white mb-2">
                                     Last Activity
                                 </h4>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">

@@ -61,7 +61,7 @@ const Lab = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
-  const [continuedChat, setContinuedChat] = useState<{ messages: any[]; context?: 'chemistry' | 'physics' } | null>(null);
+  const [continuedChat, setContinuedChat] = useState<{ messages: any[]; context?: 'chemistry' | 'physics'; id?: string } | null>(null);
   const [isContinuingChat, setIsContinuingChat] = useState(false);
   const [showWelcomeTour, setShowWelcomeTour] = useState(false);
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
@@ -198,6 +198,7 @@ const Lab = () => {
           context={continuedChat?.context || activeTab}
           initialMessages={continuedChat?.messages || []}
           isContinuedChat={isContinuingChat}
+          sessionId={continuedChat?.id} // Pass session ID for continued chats
         />
         <Settings
           isOpen={isSettingsOpen}
@@ -209,7 +210,11 @@ const Lab = () => {
           isOpen={isHistoryOpen}
           onClose={() => setIsHistoryOpen(false)}
           onContinueChat={(session: ChatSession) => {
-            setContinuedChat({ messages: session.messages, context: (session.context as 'chemistry' | 'physics') || activeTab });
+            setContinuedChat({ 
+              messages: session.messages, 
+              context: (session.context as 'chemistry' | 'physics') || activeTab,
+              id: session.id // Pass the session ID
+            });
             setIsContinuingChat(true);
             setIsAIOpen(true);
           }}
